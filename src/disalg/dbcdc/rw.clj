@@ -56,7 +56,10 @@
              :conn          c
              :initialized?  (atom false))))
 
-  (setup! [_ test] ;; TODO: 这里需要确认一下 setup！函数会被调用几次
+  (setup! [_ test]
+    ;; setup! 与指定线程数无关，只跟 nodes 数量有关。
+    ;; 测试的时候指定 --node dummy-node 限制只有一个虚假的连接节点即可保证只会创建一次表格
+    (info "Client setup!")
     (dotimes [i (:table-count test default-table-count)]
       ; OK, so first worrying thing: why can this throw duplicate key errors if
       ; it's executed with "if not exists"?
