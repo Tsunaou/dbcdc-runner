@@ -132,25 +132,6 @@
     :parse-fn read-string
     :validate [pos? "Must be a positive number."]]
 
-   [nil "--postgres-password PASS" "What password should we use to connect to postgres?"
-    :default "pw"]
-
-   [nil "--postgres-sslmode MODE" "What sslmode should we use to connect to postgres: require, disable?"
-    :default "disable"
-    :parse-fn str
-    :validate [#{"require" "disable"}
-               "Should be one of require, or disable"]]
-
-   [nil "--postgres-port NUMBER" "What port should we connect to when talking to postgres?"
-    :default 5432
-    :parse-fn parse-long]
-
-   [nil "--postgres-user NAME" "What username should we use to connect to postgres? Only use this with --existing-postgres, or you'll probably confuse the Stolon setup."
-    :default "postgres"]
-
-   [nil "--prepare-threshold INT" "Passes a prepareThreshold option to the JDBC spec."
-    :parse-fn parse-long]
-
    ["-r" "--rate HZ" "Approximate request rate, in hz"
     :default 100
     :parse-fn read-string
@@ -158,7 +139,13 @@
 
    ["-w" "--workload NAME" "What workload should we run?"
     :parse-fn keyword
-    :validate [workloads (cli/one-of workloads)]]])
+    :validate [workloads (cli/one-of workloads)]]
+
+   [nil "--database DATABASE" "Which database should we test?"
+    :parse-fn keyword
+    :default :postgresql
+    :validate [#{:postgresql}
+               "Should be one of postgresql"]]])
 
 (defn all-test-options
   "Takes base cli options, a collection of nemeses, workloads, and a test count,

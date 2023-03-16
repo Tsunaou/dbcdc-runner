@@ -1,0 +1,12 @@
+{:postgresql {:dbtype    "postgresql"
+              :host      "host"
+              :port      port
+              :user      "user"
+              :password  "password"
+              :dbname    "dbname"
+              :sslmode   "sshlmode"}
+
+ :tidb       {:dbtype    "mysql"
+              :host      "host"
+              :port      port
+              :dbname    "dbname"}}

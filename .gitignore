@@ -16,5 +16,6 @@ pom.xml.asc
 store
 .idea
 *.iml
-run.sh
 .vscode
+/resources/db-config.edn
+.calva
