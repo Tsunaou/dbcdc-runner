@@ -1,5 +1,5 @@
-(ns disalg.dbcdc.append
-  "Test for transactional list append."
+(ns disalg.dbcdc.rw
+  "Test for transactional read-write register write"
   (:require [clojure.tools.logging :refer [info warn]]
             [clojure [pprint :refer [pprint]]
              [string :as str]]
@@ -11,6 +11,7 @@
              [util :as util]]
             [jepsen.checker.timeline :as timeline]
             [jepsen.tests.cycle.append :as append]
+            [jepsen.tests.cycle.wr :as wr]
             [disalg.dbcdc [client :as c]]
             [next.jdbc :as j]
             [next.jdbc.result-set :as rs]
@@ -183,7 +184,7 @@
     (c/close! conn)))
 
 (defn workload
-  "A list append workload."
+  "A read-write register write workload."
   [opts]
   (-> (append/test (assoc (select-keys opts [:key-count
                                              :max-txn-length

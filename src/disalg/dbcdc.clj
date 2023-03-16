@@ -8,17 +8,14 @@
              [db :as jdb]
              [generator :as gen]
              [os :as os]
-             [tests :as tests]]
-            [jepsen.os.debian :as debian]
-            [disalg.dbcdc 
-             [append :as append]
-             [db :as db]
-             [ledger :as ledger]
+             [tests :as tests]
+             [control :as ctrl]]
+            [disalg.dbcdc
+             [rw :as rw]
              [nemesis :as nemesis]]))
 
 (def workloads
-  {:append      append/workload
-   :ledger      ledger/workload
+  {:rw      rw/workload
    :none        (fn [_] tests/noop-test)})
 
 (def all-workloads
@@ -56,29 +53,18 @@
    :read-committed      "RC"
    :read-uncommitted    "RU"})
 
-(defn stolon-test
+(defn dbcdc-test
   "Given an options map from the command line runner (e.g. :nodes, :ssh,
   :concurrency, ...), constructs a test map."
   [opts]
   (let [workload-name (:workload opts)
         workload      ((workloads workload-name) opts)
-        db            (cond (:existing-postgres opts) jdb/noop
-                            (:just-postgres opts)     (db/just-postgres opts)
-                            true                      (db/db opts))
-        os            (if (:existing-postgres opts)
-                        os/noop
-                        debian/os)
-        nemesis       (nemesis/nemesis-package
-                       {:db        db
-                        :nodes     (:nodes opts)
-                        :faults    (:nemesis opts)
-                        :partition {:targets [:primaries]}
-                        :pause     {:targets [nil :one :primaries :majority :all]}
-                        :kill      {:targets [nil :one :primaries :majority :all]}
-                        :interval  (:nemesis-interval opts)})]
+        db            jdb/noop
+        os            os/noop
+        nemesis       (nemesis/nemesis-package nil)]
     (merge tests/noop-test
            opts
-           {:name (str "stolon " (name workload-name)
+           {:name (str "dbcdc " (name workload-name)
                        " " (short-isolation (:isolation opts)) " ("
                        (short-isolation (:expected-consistency-model opts)) ")"
                        " " (str/join "," (map name (:nemesis opts))))
@@ -101,17 +87,15 @@
                              (gen/time-limit (:time-limit opts))))})))
 (def cli-opts
   "Additional CLI options"
-  [[nil "--etcd-version STRING" "What version of etcd should we install?"
-    :default "3.4.3"]
-
-   ["-i" "--isolation LEVEL" "What level of isolation we should set: serializable, repeatable-read, etc."
-    :default :serializable
+  [["-i" "--isolation LEVEL" "What level of isolation we should set: serializable, repeatable-read, etc."
+    :default :snapshot-isolation
     :parse-fn keyword
     :validate [#{:read-uncommitted
                  :read-committed
                  :repeatable-read
+                 :snapshot-isolation
                  :serializable}
-               "Should be one of read-uncommitted, read-committed, repeatable-read, or serializable"]]
+               "Should be one of read-uncommitted, read-committed, repeatable-read, snapshot-isolation, or serializable"]]
 
    [nil "--existing-postgres" "If set, assumes nodes already have a running Postgres instance, skipping any OS and DB setup and teardown. Suitable for debugging issues against a local instance of Postgres (or some sort of pre-built cluster) when you don't want to set up a whole-ass Jepsen environment."
     :default false]
@@ -172,9 +156,6 @@
     :parse-fn read-string
     :validate [pos? "Must be a positive number."]]
 
-   ["-v" "--version STRING" "What version of Stolon should we test?"
-    :default "0.16.0"]
-
    ["-w" "--workload NAME" "What workload should we run?"
     :parse-fn keyword
     :validate [workloads (cli/one-of workloads)]]])
@@ -209,10 +190,10 @@
   "Handles command line arguments. Can either run a test, or a web server for
   browsing results."
   [& args]
-  (cli/run! (merge (cli/single-test-cmd {:test-fn  stolon-test
+  (cli/run! (merge (cli/single-test-cmd {:test-fn  dbcdc-test
                                          :opt-spec cli-opts
                                          :opt-fn   opt-fn})
-                   (cli/test-all-cmd {:tests-fn (partial all-tests stolon-test)
+                   (cli/test-all-cmd {:tests-fn (partial all-tests dbcdc-test)
                                       :opt-spec cli-opts
                                       :opt-fn   opt-fn})
                    (cli/serve-cmd))
