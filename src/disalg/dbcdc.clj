@@ -145,7 +145,10 @@
     :parse-fn keyword
     :default :postgresql
     :validate [#{:postgresql}
-               "Should be one of postgresql"]]])
+               "Should be one of postgresql"]]
+
+   [nil "--varchar-table" "If set, the fields in the tested table will be varchar(16)."
+    :default false]])
 
 (defn all-test-options
   "Takes base cli options, a collection of nemeses, workloads, and a test count,

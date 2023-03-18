@@ -45,23 +45,29 @@
 (defn create-table
   [^Connection conn table test]
   (let [db (:database test)
-        res (case db
-              :postgresql (pg/create-table conn table)
+        res (case db :postgresql (
+                                   if (:varchar-table test)
+                                   (pg/create-varchar-table conn table)
+                                   (pg/create-table conn table))
               (str "create-table not be implemented for database " db))]))
 
 (defn read
   [^Connection conn table key test]
   (let [db (:database test)
-        res (case db
-              :postgresql (pg/read conn table key)
+        res (case db :postgresql (
+                                   if (:varchar-table test)
+                                   (pg/read conn table (str key))
+                                   (pg/read conn table key))
               (str "read not be implemented for database " db))]
     res))
 
 (defn write
   [^Connection conn table key value test]
   (let [db (:database test)
-        res (case db
-              :postgresql (pg/write conn table key value)
+        res (case db :postgresql (
+                                   if (:varchar-table test)
+                                   (pg/write conn table (str key) (str value))
+                                   (pg/write conn table key value))
               (str "write not be implemented for database " db))]
     res))
 

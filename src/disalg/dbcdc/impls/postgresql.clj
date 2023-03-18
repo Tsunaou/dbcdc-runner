@@ -46,14 +46,27 @@
     (j/execute-one! conn [drop-stmt])
     (j/execute-one! conn [create-stmt])))
 
+(defn create-varchar-table
+  [^Connection conn table]
+  (let [drop-stmt (str "drop table if exists " table)
+        create-stmt (str "create table if not exists " table
+                         " (key varchar(16) not null primary key, val varchar(16) not null)")]
+    (j/execute-one! conn [drop-stmt])
+    (j/execute-one! conn [create-stmt])))
+
 (defn read
   [^Connection conn table key]
   (let [res (j/execute-one! conn
                             [(str "select val from " table " where key =  ?") key]
                             {:builder-fn rs/as-unqualified-lower-maps})]
     (info "pg-read" res)
+    (println res)
+    (println (:val res))
+    (println (type (:val res)))
     (when-let [v (:val res)]
-      (long v))))
+      (if (string? v)
+        (long (Long/parseLong v))
+        (long v)))))
 
 (defn write
   [^Connection conn table key value]

@@ -10,4 +10,5 @@ lein run test-all -w rw \
 --nemesis none \
 --existing-postgres \
 --no-ssh \
---database postgresql
+--database postgresql \
+--varchar-table
