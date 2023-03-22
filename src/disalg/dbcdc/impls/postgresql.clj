@@ -57,12 +57,21 @@
 (defn read
   [^Connection conn table key]
   (let [res (j/execute-one! conn
-                            [(str "select val from " table " where key =  ?") key]
+;                            [(str "select val from " table " where key = ?") key]
+                            [(str "SELECT val FROM " table " WHERE key = " key)]
                             {:builder-fn rs/as-unqualified-lower-maps})]
     (info "pg-read" res)
-    (println res)
-    (println (:val res))
-    (println (type (:val res)))
+    (when-let [v (:val res)]
+      (if (string? v)
+        (long (Long/parseLong v))
+        (long v)))))
+
+(defn read-varchar
+  [^Connection conn table key]
+  (let [res (j/execute-one! conn
+                            [(str "SELECT val FROM " table " WHERE key = '" key "'")]
+                            {:builder-fn rs/as-unqualified-lower-maps})]
+    (info "pg-read" res)
     (when-let [v (:val res)]
       (if (string? v)
         (long (Long/parseLong v))
@@ -72,11 +81,31 @@
   [^Connection conn table key value]
   (let [res (j/execute-one!
              conn
-             [(str "insert into " table " as t"
-                   " (key, val) values (?, ?)"
-                   " on conflict (key) do update set"
-                   " val = ? where t.key = ?")
-              key value value key])]
+;             [(str "insert into " table " as t"
+;                   " (key, val) values (?, ?)"
+;                   " on conflict (key) do update set"
+;                   " val = ? where t.key = ?")
+;              key value value key]
+             [(str "INSERT INTO " table " AS t"
+                   " (key, val) VALUES (" key ", " value ")"
+                   " ON CONFLICT (key) DO UPDATE SET"
+                   " val = " value " WHERE t.key = " key)]
+             )]
+    (info "pg-write" res)
+    (when-not (pos? (res :next.jdbc/update-count))
+      (throw+ {:type ::write-but-not-take-effect
+               :key  key
+               :val  value}))))
+
+(defn write-varchar
+  [^Connection conn table key value]
+  (let [res (j/execute-one!
+             conn
+             [(str "INSERT INTO " table " AS t"
+                   " (key, val) VALUES ('" key "', '" value "')"
+                   " ON CONFLICT (key) DO UPDATE SET"
+                   " val = '" value "' WHERE t.key = '" key "'")]
+             )]
     (info "pg-write" res)
     (when-not (pos? (res :next.jdbc/update-count))
       (throw+ {:type ::write-but-not-take-effect

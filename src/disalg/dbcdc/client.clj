@@ -56,7 +56,7 @@
   (let [db (:database test)
         res (case db :postgresql (
                                    if (:varchar-table test)
-                                   (pg/read conn table (str key))
+                                   (pg/read-varchar conn table (str key))
                                    (pg/read conn table key))
               (str "read not be implemented for database " db))]
     res))
@@ -66,7 +66,7 @@
   (let [db (:database test)
         res (case db :postgresql (
                                    if (:varchar-table test)
-                                   (pg/write conn table (str key) (str value))
+                                   (pg/write-varchar conn table (str key) (str value))
                                    (pg/write conn table key value))
               (str "write not be implemented for database " db))]
     res))
