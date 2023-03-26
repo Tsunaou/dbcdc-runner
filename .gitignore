@@ -19,3 +19,8 @@ store
 .vscode
 /resources/db-config.edn
 .calva
+
+txn-log/
+txn-wal/
+wal-texts/
+run_test.sh
