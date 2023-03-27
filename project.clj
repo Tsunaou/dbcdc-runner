@@ -8,6 +8,7 @@
                  [jepsen.etcd "0.2.1"]
                  [seancorfield/next.jdbc "1.0.445"]
                  [org.postgresql/postgresql "42.2.12"]
+                 [mysql/mysql-connector-java "8.0.27"]
                  [cheshire "5.10.0"]
                  [clj-wallhack "1.0.1"]]
   :main disalg.dbcdc

@@ -89,8 +89,7 @@
              [(str "INSERT INTO " table " AS t"
                    " (key, val) VALUES (" key ", " value ")"
                    " ON CONFLICT (key) DO UPDATE SET"
-                   " val = " value " WHERE t.key = " key)]
-             )]
+                   " val = " value " WHERE t.key = " key)])]
     (info "pg-write" res)
     (when-not (pos? (res :next.jdbc/update-count))
       (throw+ {:type ::write-but-not-take-effect
@@ -104,8 +103,7 @@
              [(str "INSERT INTO " table " AS t"
                    " (key, val) VALUES ('" key "', '" value "')"
                    " ON CONFLICT (key) DO UPDATE SET"
-                   " val = '" value "' WHERE t.key = '" key "'")]
-             )]
+                   " val = '" value "' WHERE t.key = '" key "'")])]
     (info "pg-write" res)
     (when-not (pos? (res :next.jdbc/update-count))
       (throw+ {:type ::write-but-not-take-effect

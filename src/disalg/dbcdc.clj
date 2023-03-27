@@ -65,6 +65,7 @@
     (merge tests/noop-test
            opts
            {:name (str "dbcdc " (name workload-name)
+                       " " (:database opts)
                        " " (short-isolation (:isolation opts)) " ("
                        (short-isolation (:expected-consistency-model opts)) ")"
                        " " (str/join "," (map name (:nemesis opts))))
@@ -144,8 +145,8 @@
    [nil "--database DATABASE" "Which database should we test?"
     :parse-fn keyword
     :default :postgresql
-    :validate [#{:postgresql}
-               "Should be one of postgresql"]]
+    :validate [#{:postgresql, :mysql, :tidb}
+               "Should be one of postgresql, mysql, tidb"]]
 
    [nil "--varchar-table" "If set, the fields in the tested table will be varchar(16)."
     :default false]])

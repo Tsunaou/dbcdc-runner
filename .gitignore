@@ -19,3 +19,6 @@ store
 .vscode
 /resources/db-config.edn
 .calva
+
+# TiDB
+doc/TiDB

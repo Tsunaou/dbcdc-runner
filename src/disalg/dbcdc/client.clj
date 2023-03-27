@@ -32,6 +32,8 @@
   (let [db (:database test)]
     (case db
       :postgresql (pg/isolation-mapping isolation)
+      :mysql      (mysql/isolation-mapping isolation)
+      :tidb      (mysql/isolation-mapping isolation)
       (str "isolation-mapping not be implemented for database " db))))
 
 (defn set-transaction-isolation!
@@ -40,34 +42,42 @@
   (let [db (:database test)
         res (case db
               :postgresql (pg/set-transaction-isolation! conn level)
+              :mysql      (pg/set-transaction-isolation! conn level)
+              :tidb       (mysql/set-transaction-isolation! conn level)
               (str "set-transaction-isolation! not be implemented for database " db))]))
 
 (defn create-table
   [^Connection conn table test]
   (let [db (:database test)
-        res (case db :postgresql (
-                                   if (:varchar-table test)
-                                   (pg/create-varchar-table conn table)
-                                   (pg/create-table conn table))
+        res (case db
+              :postgresql (if (:varchar-table test)
+                            (pg/create-varchar-table conn table)
+                            (pg/create-table conn table))
+              :mysql      (mysql/create-table conn table)
+              :tidb       (mysql/create-table conn table)
               (str "create-table not be implemented for database " db))]))
 
 (defn read
   [^Connection conn table key test]
   (let [db (:database test)
-        res (case db :postgresql (
-                                   if (:varchar-table test)
-                                   (pg/read-varchar conn table (str key))
-                                   (pg/read conn table key))
+        res (case db
+              :postgresql (if (:varchar-table test)
+                            (pg/read-varchar conn table (str key))
+                            (pg/read conn table key))
+              :mysql      (mysql/read conn table key)
+              :tidb       (mysql/read conn table key)
               (str "read not be implemented for database " db))]
     res))
 
 (defn write
   [^Connection conn table key value test]
   (let [db (:database test)
-        res (case db :postgresql (
-                                   if (:varchar-table test)
-                                   (pg/write-varchar conn table (str key) (str value))
-                                   (pg/write conn table key value))
+        res (case db
+              :postgresql (if (:varchar-table test)
+                            (pg/write-varchar conn table (str key) (str value))
+                            (pg/write conn table key value))
+              :mysql      (mysql/write conn table key value)
+              :tidb       (mysql/write conn table key value)
               (str "write not be implemented for database " db))]
     res))
 
@@ -133,5 +143,12 @@
 
             #"connection has been closed"
             (assoc ~op :type :info, :error :connection-has-been-closed)
+
+            (throw e#)))
+
+        (catch com.mysql.cj.jdbc.exceptions.MySQLTransactionRollbackException e#
+          (condp re-find (.getMessage e#)
+            #"Deadlock found when trying to get lock;"
+            (assoc ~op :type :fail, :error [:deadlock (.getMessage e#)])
 
             (throw e#)))))
