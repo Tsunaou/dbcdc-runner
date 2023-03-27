@@ -54,7 +54,10 @@
                             (pg/create-varchar-table conn table)
                             (pg/create-table conn table))
               :mysql      (mysql/create-table conn table)
-              :tidb       (mysql/create-table conn table)
+              :tidb       (do
+                            (when (= :opt (:tidb-mode test))
+                              (j/execute-one! conn ["SET GLOBAL tidb_txn_mode = 'optimistic';"])) ;; 开启乐观事务
+                            (mysql/create-table conn table))
               (str "create-table not be implemented for database " db))]))
 
 (defn read
@@ -150,5 +153,12 @@
           (condp re-find (.getMessage e#)
             #"Deadlock found when trying to get lock;"
             (assoc ~op :type :fail, :error [:deadlock (.getMessage e#)])
+
+            (throw e#)))
+
+        (catch java.sql.SQLException e#
+          (condp re-find (.getMessage e#)
+            #"Write conflict, txnStartTS="
+            (assoc ~op :type :fail, :error [:write-conflict (.getMessage e#)])
 
             (throw e#)))))
