@@ -22,3 +22,8 @@ store
 
 # TiDB
 doc/TiDB
+# YugabyteDB
+txn-log/
+txn-wal/
+wal-texts/
+run_test.sh

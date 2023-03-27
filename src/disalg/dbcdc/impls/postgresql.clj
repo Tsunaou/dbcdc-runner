@@ -40,17 +40,17 @@
 
 (defn create-table
   [^Connection conn table]
-  (let [drop-stmt (str "drop table if exists " table)
-        create-stmt (str "create table if not exists " table
-                         " (key int not null primary key, val int not null)")]
+  (let [drop-stmt (str "DROP TABLE IF EXISTS " table)
+        create-stmt (str "CREATE TABLE IF NOT EXISTS " table
+                         " (key INT NOT NULL PRIMARY KEY, val INT NOT NULL)")]
     (j/execute-one! conn [drop-stmt])
     (j/execute-one! conn [create-stmt])))
 
 (defn create-varchar-table
   [^Connection conn table]
-  (let [drop-stmt (str "drop table if exists " table)
-        create-stmt (str "create table if not exists " table
-                         " (key varchar(16) not null primary key, val varchar(16) not null)")]
+  (let [drop-stmt (str "DROP TABLE IF EXISTS " table)
+        create-stmt (str "CREATE TABLE IF NOT EXISTS " table
+                         " (key VARCHAR(16) NOT NULL PRIMARY KEY, val VARCHAR(16) NOT NULL)")]
     (j/execute-one! conn [drop-stmt])
     (j/execute-one! conn [create-stmt])))
 
