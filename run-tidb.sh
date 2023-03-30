@@ -1,6 +1,6 @@
 #!/bin/bash
 lein run test-all -w rw \
---max-writes-per-key 4 \
+--max-writes-per-key 16 \
 --concurrency 50 \
 -r 500 \
 --node dummy-node \
@@ -11,4 +11,4 @@ lein run test-all -w rw \
 --existing-postgres \
 --no-ssh \
 --database $1 \
-# --varchar-table
+--tidb-mode $2

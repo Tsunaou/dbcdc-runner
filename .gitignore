@@ -13,14 +13,17 @@ pom.xml.asc
 .hg/
 .clj-kondo
 .lsp
-store*
+store
 .idea
 *.iml
 .vscode
 /resources/db-config.edn
 .calva
 
+# TiDB
+doc/TiDB
+# YugabyteDB
 txn-log/
 txn-wal/
 wal-texts/
-run_*.sh
+run_test.sh
