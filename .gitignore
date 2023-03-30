@@ -13,7 +13,7 @@ pom.xml.asc
 .hg/
 .clj-kondo
 .lsp
-store
+store*
 .idea
 *.iml
 .vscode
@@ -23,4 +23,4 @@ store
 txn-log/
 txn-wal/
 wal-texts/
-run_test.sh
+run_*.sh

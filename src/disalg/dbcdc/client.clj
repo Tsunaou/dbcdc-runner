@@ -134,4 +134,13 @@
             #"connection has been closed"
             (assoc ~op :type :info, :error :connection-has-been-closed)
 
+            #"ERROR: Operation expired"
+            (assoc ~op :type :info, :error :opeartion-expired)
+
+            #"ERROR: Operation failed"
+            (assoc ~op :type :info, :error :opeartion-failed)
+
+            #"ERROR: Query error"
+            (assoc ~op :type :info, :error :query-error)
+
             (throw e#)))))
