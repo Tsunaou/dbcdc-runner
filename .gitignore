@@ -13,7 +13,7 @@ pom.xml.asc
 .hg/
 .clj-kondo
 .lsp
-store
+store*
 .idea
 *.iml
 .vscode
@@ -26,4 +26,5 @@ doc/TiDB
 txn-log/
 txn-wal/
 wal-texts/
-run_test.sh
+# run
+run_*.sh
