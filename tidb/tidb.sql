@@ -10,3 +10,17 @@ INSERT INTO txn0 (k, v) VALUES (7, 3) ON DUPLICATE KEY UPDATE v = 3;
 INSERT INTO txn0 (k, v) VALUES (10, 2) ON DUPLICATE KEY UPDATE v = 2;
 SELECT v FROM txn0 WHERE k = 10;
 COMMIT;
+
+-- before test
+DROP TABLE IF EXISTS notice;
+CREATE TABLE notice (k INT UNIQUE NOT NULL PRIMARY KEY, v INT NOT NULL);
+INSERT INTO notice (k, v) VALUES (0, 0);
+INSERT INTO notice (k, v) VALUES (1, 0);
+INSERT INTO notice (k, v) VALUES (2, 0);
+INSERT INTO notice (k, v) VALUES (3, 0);
+INSERT INTO notice (k, v) VALUES (4, 0);
+INSERT INTO notice (k, v) VALUES (5, 0);
+INSERT INTO notice (k, v) VALUES (6, 0);
+INSERT INTO notice (k, v) VALUES (7, 0);
+INSERT INTO notice (k, v) VALUES (8, 0);
+INSERT INTO notice (k, v) VALUES (9, 0);

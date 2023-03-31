@@ -2,7 +2,15 @@ import re
 import json
 
 # 定义正则表达式匹配日志格式
-log_pattern = r"\[(.*)\] \[(.*)\] \[(.*):(.*)\] \[(.*)\] \[(.*)\]"
+log_pattern = r"(.*)\[(.*)\] \[(.*):(.*)\] \[(.*)\] \[row-id=(.*)\] \[table-name=(.*)\] \[start-ts=(.*)\] \[commit-ts=(.*)\] \[columns=(.*)\] \[pre-columns=(.*)\]"
+
+
+def save2json(input_dict, output_path, indent=0):
+    with open(output_path, "w") as outfile:
+        if indent == 0:
+            json.dump(input_dict, outfile)
+        else:
+            json.dump(input_dict, outfile, indent=4)
 
 
 # 从日志字符串中解析出 row 数据
@@ -19,13 +27,16 @@ def extract_row(log_str):
     log_dict["filename"] = match.group(3)
     log_dict["lineno"] = match.group(4)
     log_dict["event_type"] = match.group(5)
-    row_str = match.group(6)
+    log_dict["row-id"] = int(match.group(6))
+    log_dict["table-na,e"] = match.group(7)
+    log_dict["start-ts"] = int(match.group(8))
+    log_dict["commit-ts"] = int(match.group(9))
 
-    # 解析 row 数据
-    row_str = row_str.split('row="')[1].strip("\n").replace('\\', '')
-    row_str = row_str[:-1]  # 去掉最后一个 "]" 及其后面的内容
-    row_dict = json.loads(row_str)
-    log_dict["row"] = row_dict
+    columns = match.group(10)
+    pre_columns = match.group(11)
+
+    log_dict["columns"] = json.loads(columns.strip('\n\"').replace('\\', ''))
+    log_dict["pre-columns"] = json.loads(pre_columns.strip('\n\"').replace('\\', ''))
 
     return log_dict
 
@@ -37,8 +48,9 @@ def get_write_info_from_log(logfile):
     with open(logfile, 'r') as f:
         lines = f.readlines()
         for line in lines:
-            log_dict = extract_row(line)
-            row = log_dict["row"]
+            if line.__contains__("notice") or line.__contains__("BOOLEAN"):
+                continue
+            row = extract_row(line)
             start_ts = row['start-ts']
             commit_ts = row['commit-ts']
             columns = row['columns']
@@ -59,14 +71,22 @@ def get_write_info_from_log(logfile):
             pre_write = parse_column(pre_columns)
 
             # 将write的信息存储到字典write_info中
-            write_info[str(write)] = {'start_ts': start_ts, 'commit_ts': commit_ts, 'pre_write': pre_write}
+            write_info[str(write)] = {
+                'start_ts': start_ts, 'commit_ts': commit_ts, 'pre_write': pre_write}
 
     return write_info
 
+
 if __name__ == '__main__':
-    store_dir = '/Users/ouyanghongrong/github-projects/disalg.dbcdc/store'
-    base_dir = store_dir + '/dbcdc rw tidb pess SI (SI) /20230328T112331.000+0800'
-    logfile = base_dir + '/cdc-out.log'
+    # store_dir = '/Users/ouyanghongrong/github-projects/disalg.dbcdc/store'
+    # instance_dirs = ['/dbcdc rw tidb opt SI (SI) /latest']
+    #
+    store_dir = '/Users/ouyanghongrong/github-projects/disalg.dbcdc'
+    instance_dirs = ['/tidb']
 
-    write_infos = get_write_info_from_log(logfile)
-
+    for instance_dir in instance_dirs:
+        base_dir = store_dir + instance_dir
+        logfile = base_dir + '/cdc.log'
+        outfile = base_dir + '/cdc.json'
+        write_infos = get_write_info_from_log(logfile)
+        save2json(write_infos, outfile, 4)

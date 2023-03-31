@@ -13,7 +13,7 @@ pom.xml.asc
 .hg/
 .clj-kondo
 .lsp
-store
+store*
 .idea
 *.iml
 .vscode
@@ -22,6 +22,7 @@ store
 
 # TiDB
 doc/TiDB
+tidb/__pycache__
 # YugabyteDB
 txn-log/
 txn-wal/

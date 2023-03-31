@@ -1,5 +1,13 @@
 # 使用 Jepsen 对 TiDB 进行测试
 
+# 简易流程
+
+1. 使用 TiUP 启动集群
+2. 启动 TiCDC Server，并创建 changefeed
+3. 初始化同步 SQL 语句
+4. 删除 tidb/cdc.log
+5. 启动测试
+
 # TiDB 搭建
 
 ## 本地部署
