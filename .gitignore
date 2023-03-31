@@ -27,4 +27,5 @@ tidb/__pycache__
 txn-log/
 txn-wal/
 wal-texts/
-run_test.sh
+# run
+run_*.sh
