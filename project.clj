@@ -8,8 +8,9 @@
                  [jepsen.etcd "0.2.1"]
                  [seancorfield/next.jdbc "1.0.445"]
                  [org.postgresql/postgresql "42.2.12"]
-                 [mysql/mysql-connector-java "8.0.27"]
+                 [mysql/mysql-connector-java "8.0.32"]
                  [cheshire "5.10.0"]
                  [clj-wallhack "1.0.1"]]
+  :jvm-opts ["-Djava.awt.headless=true"]
   :main disalg.dbcdc
   :repl-options {:init-ns disalg.dbcdc})

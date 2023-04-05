@@ -69,6 +69,9 @@
                        " " (name (:database opts))
                        (when (= (:database opts) :tidb)
                          (str " " (name (:tidb-mode opts))))
+                       "num " (:txn-num opts)
+                       "con " (:concurrency opts)
+                       "len " (:max-txn-length opts)
                        " " (short-isolation (:isolation opts)) " ("
                        (short-isolation (:expected-consistency-model opts)) ")"
                        " " (str/join "," (map name (:nemesis opts))))
