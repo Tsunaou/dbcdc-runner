@@ -3,10 +3,25 @@ import time
 import os
 import shutil
 import mysql.connector
+import warnings
+import platform
 
-from tidb.parser import get_write_info_from_log, save2json
+from log_parser import get_write_info_from_log, save2json
 
-base_dir = '/Users/ouyanghongrong/github-projects/disalg.dbcdc'
+os_type = platform.system()
+
+if os_type == "Darwin":
+    base_dir = '/Users/ouyanghongrong/github-projects/disalg.dbcdc'
+elif os_type == "Linux":
+    base_dir = '/data/home/tsunaouyang/github-projects/dbcdc-runner'
+
+txn_num_options = [1000, 2000, 3000, 4000, 5000]
+concurrency_options = [3, 6, 9, 12, 15]
+max_txn_len_options = [4, 8, 12, 16, 20]
+
+default_txn_num = 3000
+default_concurrency = 9
+default_max_txn_len = 12
 
 
 def prepare():
@@ -16,6 +31,7 @@ def prepare():
 
 
 def write_into_tidb(idx):
+    warnings.warn("write_into_tidb() is deprecated.")
     print("[BEGIN] Write into TiDB")
 
     conn = mysql.connector.connect(
@@ -42,6 +58,7 @@ def write_into_tidb(idx):
 
 
 def wait_until_mysql(idx):
+    warnings.warn("wait_until_mysql() is deprecated.")
     print("[BEGIN] Wait Until MySQL")
 
     conn = mysql.connector.connect(
@@ -56,8 +73,10 @@ def wait_until_mysql(idx):
         while True:
             cur = conn.cursor()
             try:
-                cur.execute("SELECT COUNT(*) FROM notice WHERE v = {}".format(idx + 1))
-                print("wait for table notice finished for {} seconds".format(time.time() - start_time))
+                query = "SELECT COUNT(*) FROM notice WHERE v = {}".format(idx + 1)
+                cur.execute(query)
+                wait_time = time.time() - start_time
+                print("wait for table notice finished for {} seconds".format(wait_time))
                 result = cur.fetchone()
                 print(result)
                 if result and result[0] == 10:
@@ -127,7 +146,8 @@ def wait_until_sync():
         if res1 == res2:
             break
 
-        print("wait for table notice finished for {} seconds".format(time.time() - start_time))
+        wait_time = time.time() - start_time
+        print("wait for table notice finished for {} seconds".format(wait_time))
         time.sleep(5)
 
         if time.time() > start_time + 180:
@@ -148,12 +168,15 @@ def save_log2json():
         shutil.move(logfile, outlog)
 
 
-def run_one_round(idx, mode="opt"):
+def run_one_round(mode="opt", txn_num=default_txn_num, concurrency=default_concurrency, max_txn_len=default_max_txn_len):
+    print(f"Start testing TiDB {mode} mode")
+    print(f"txn_num={txn_num}, con={concurrency}, max_txn_len={max_txn_len}")
+    return
     # Start a new process T-watch for watching
     with subprocess.Popen(["./watch.sh"]) as p_watch:
         # Run test in a new process T-test after process T-watch starting for seconds
         time.sleep(3)
-        with subprocess.Popen(["../run-tidb.sh", "tidb", mode]) as p_test:
+        with subprocess.Popen(["../run-tidb.sh", "tidb", mode, txn_num, concurrency, max_txn_len]) as p_test:
             # After the script in process T-test finished, sleep for seconds, close process T-watch
             p_test.wait()
 
@@ -170,13 +193,17 @@ def run_one_round(idx, mode="opt"):
 if __name__ == '__main__':
     print("Start testing")
     prepare()
-    for mode in ["opt", "pess"]:
-        for i in range(0, 10):
-            if mode == 'opt':
-                idx = i
-            else:
-                idx = i + 10
-            print("Test: TiDB {} mode in Round {}".format(mode, idx))
-            run_one_round(idx, mode)
+    test_cnt = 100
+    for i in range(0, test_cnt):
+        for mode in ["opt", "pess"]:
+            print("Test: TiDB {} mode in Round {}".format(mode, i))
+
+            for txn_num in txn_num_options:
+                run_one_round(mode, txn_num=txn_num)
+            for concurrency in concurrency_options:
+                run_one_round(mode, concurrency=concurrency)
+            for max_txn_len in max_txn_len_options:
+                run_one_round(mode, max_txn_len=max_txn_len)
+
             print("Finish this round")
     print("Finish testing")
