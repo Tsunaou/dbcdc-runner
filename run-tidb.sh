@@ -4,7 +4,7 @@ lein run test-all -w rw \
 --txn-num $3 \
 --concurrency $4 \
 --max-txn-length $5 \
---time-limit 600 \ 
+--time-limit 600 \
 -r 500 \
 --node dummy-node \
 --isolation snapshot-isolation \

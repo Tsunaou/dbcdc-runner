@@ -171,12 +171,11 @@ def save_log2json():
 def run_one_round(mode="opt", txn_num=default_txn_num, concurrency=default_concurrency, max_txn_len=default_max_txn_len):
     print(f"Start testing TiDB {mode} mode")
     print(f"txn_num={txn_num}, con={concurrency}, max_txn_len={max_txn_len}")
-    return
     # Start a new process T-watch for watching
     with subprocess.Popen(["./watch.sh"]) as p_watch:
         # Run test in a new process T-test after process T-watch starting for seconds
         time.sleep(3)
-        with subprocess.Popen(["../run-tidb.sh", "tidb", mode, txn_num, concurrency, max_txn_len]) as p_test:
+        with subprocess.Popen(["../run-tidb.sh", "tidb", mode, str(txn_num), str(concurrency), str(max_txn_len)]) as p_test:
             # After the script in process T-test finished, sleep for seconds, close process T-watch
             p_test.wait()
 
@@ -193,17 +192,17 @@ def run_one_round(mode="opt", txn_num=default_txn_num, concurrency=default_concu
 if __name__ == '__main__':
     print("Start testing")
     prepare()
-    test_cnt = 100
+    test_cnt = 200
     for i in range(0, test_cnt):
         for mode in ["opt", "pess"]:
             print("Test: TiDB {} mode in Round {}".format(mode, i))
-
-            for txn_num in txn_num_options:
-                run_one_round(mode, txn_num=txn_num)
-            for concurrency in concurrency_options:
-                run_one_round(mode, concurrency=concurrency)
-            for max_txn_len in max_txn_len_options:
-                run_one_round(mode, max_txn_len=max_txn_len)
+            run_one_round(mode)
+            # for txn_num in txn_num_options:
+            #     run_one_round(mode, txn_num=txn_num)
+            # for concurrency in concurrency_options:
+            #     run_one_round(mode, concurrency=concurrency)
+            # for max_txn_len in max_txn_len_options:
+            #     run_one_round(mode, max_txn_len=max_txn_len)
 
             print("Finish this round")
     print("Finish testing")
