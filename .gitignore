@@ -23,6 +23,7 @@ store*
 # TiDB
 doc/TiDB
 tidb/__pycache__
+tidb/cdc.log
 # YugabyteDB
 txn-log/
 txn-wal/

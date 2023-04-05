@@ -52,7 +52,7 @@
   (let [res (j/execute-one! conn
                             [(str "SELECT v FROM " table " WHERE k = " key)]
                             {:builder-fn rs/as-unqualified-lower-maps})]
-    (info "mysql-read" res)
+    ;; (info "mysql-read" res)
     (when-let [v (:v res)]
       (if (string? v)
         (long (Long/parseLong v))
@@ -116,7 +116,7 @@
                    " (k, v) VALUES (" key ", " value ")"
                    " ON DUPLICATE KEY UPDATE "
                    " v = " value)])]
-    (info "mysql-write" res)
+    ;; (info "mysql-write" res)
     (when-not (pos? (res :next.jdbc/update-count))
       (throw+ {:type ::write-but-not-take-effect
                :key  key

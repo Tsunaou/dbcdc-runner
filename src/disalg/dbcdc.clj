@@ -12,7 +12,8 @@
              [control :as ctrl]]
             [disalg.dbcdc
              [rw :as rw]
-             [nemesis :as nemesis]]))
+             [nemesis :as nemesis]]
+            [jepsen.generator :as gen]))
 
 (def workloads
   {:rw      rw/workload
@@ -87,6 +88,7 @@
                         (->> (:generator workload)
                              (gen/stagger (/ (:rate opts)))
                              (gen/nemesis (:generator nemesis))
+                             (gen/limit (:txn-num opts))
                              (gen/time-limit (:time-limit opts))))})))
 (def cli-opts
   "Additional CLI options"
@@ -121,17 +123,22 @@
                "Faults must be pause, kill, partition, clock, or member, or the special faults all or none."]]
 
    [nil "--max-txn-length NUM" "Maximum number of operations in a transaction."
-    :default  4
+    :default  12
     :parse-fn parse-long
     :validate [pos? "Must be a positive integer"]]
 
    [nil "--max-writes-per-key NUM" "Maximum number of writes to any given key."
-    :default  256
+    :default  128
     :parse-fn parse-long
     :validate [pos? "Must be a positive integer."]]
 
    [nil "--nemesis-interval SECS" "Roughly how long between nemesis operations."
     :default 5
+    :parse-fn read-string
+    :validate [pos? "Must be a positive number."]]
+
+   [nil "--txn-num NUM" "The number of transactions invoked when testing."
+    :default 3000
     :parse-fn read-string
     :validate [pos? "Must be a positive number."]]
 

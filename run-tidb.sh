@@ -1,13 +1,14 @@
 #!/bin/bash
 echo "Start running Jepsen testing for $1 in $2 mode"
 lein run test-all -w rw \
---max-writes-per-key 16 \
---concurrency 50 \
+--txn-num 3000 \
+--concurrency 9 \
+--max-txn-length 12 \
+--time-limit 600 \ 
 -r 500 \
 --node dummy-node \
 --isolation snapshot-isolation \
 --expected-consistency-model snapshot-isolation \
---time-limit 60 \
 --nemesis none \
 --existing-postgres \
 --no-ssh \
