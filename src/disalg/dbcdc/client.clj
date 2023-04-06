@@ -156,6 +156,9 @@
             #"ERROR: Query error"
             (assoc ~op :type :info, :error :query-error)
 
+            #"ERROR: duplicate key value"
+            (assoc ~op :type :info, :error :duplicate-key-value)
+
             (throw e#)))
 
         (catch com.mysql.cj.jdbc.exceptions.MySQLTransactionRollbackException e#
