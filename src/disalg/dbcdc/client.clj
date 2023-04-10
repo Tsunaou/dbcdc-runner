@@ -159,6 +159,12 @@
             #"ERROR: duplicate key value"
             (assoc ~op :type :info, :error :duplicate-key-value)
 
+            #"错误: 由于同步更新而无法串行访问"
+            (assoc ~op :type :info, :error :no-serial-access)
+
+            #"错误: 检测到死锁"
+            (assoc ~op :type :info, :error :deadlock-detected)
+
             (throw e#)))
 
         (catch com.mysql.cj.jdbc.exceptions.MySQLTransactionRollbackException e#
