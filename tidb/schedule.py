@@ -196,13 +196,12 @@ if __name__ == '__main__':
     for i in range(0, test_cnt):
         for mode in ["opt", "pess"]:
             print("Test: TiDB {} mode in Round {}".format(mode, i))
-            run_one_round(mode)
-            # for txn_num in txn_num_options:
-            #     run_one_round(mode, txn_num=txn_num)
-            # for concurrency in concurrency_options:
-            #     run_one_round(mode, concurrency=concurrency)
-            # for max_txn_len in max_txn_len_options:
-            #     run_one_round(mode, max_txn_len=max_txn_len)
+            for txn_num in txn_num_options:
+                run_one_round(mode, txn_num=txn_num)
+            for concurrency in concurrency_options:
+                run_one_round(mode, concurrency=concurrency)
+            for max_txn_len in max_txn_len_options:
+                run_one_round(mode, max_txn_len=max_txn_len)
 
             print("Finish this round")
     print("Finish testing")

@@ -1,0 +1,26 @@
+({:param "dbcdc rw tidb pess num 3000 con 15 len 12 SI (SI) ", :time 59641/186}
+ {:param "dbcdc rw tidb opt num 3000 con 3 len 12 SI (SI) ", :time 33284/93}
+ {:param "dbcdc rw tidb pess num 3000 con 9 len 12 SI (SI) ", :time 88478/279}
+ {:param "dbcdc rw tidb opt num 4000 con 9 len 12 SI (SI) ", :time 39251/93}
+ {:param "dbcdc rw tidb opt num 1000 con 9 len 12 SI (SI) ", :time 3335/31}
+ {:param "dbcdc rw tidb pess num 3000 con 12 len 12 SI (SI) ", :time 59621/186}
+ {:param "dbcdc rw tidb pess num 3000 con 9 len 4 SI (SI) ", :time 43487/186}
+ {:param "dbcdc rw tidb pess num 5000 con 9 len 12 SI (SI) ", :time 49840/93}
+ {:param "dbcdc rw tidb opt num 3000 con 12 len 12 SI (SI) ", :time 60223/186}
+ {:param "dbcdc rw tidb opt num 5000 con 9 len 12 SI (SI) ", :time 50257/93}
+ {:param "dbcdc rw tidb opt num 3000 con 9 len 8 SI (SI) ", :time 52061/186}
+ {:param "dbcdc rw tidb opt num 3000 con 6 len 12 SI (SI) ", :time 20879/62}
+ {:param "dbcdc rw tidb opt num 3000 con 9 len 16 SI (SI) ", :time 34351/93}
+ {:param "dbcdc rw tidb pess num 3000 con 6 len 12 SI (SI) ", :time 20877/62}
+ {:param "dbcdc rw tidb pess num 3000 con 9 len 16 SI (SI) ", :time 11590/31}
+ {:param "dbcdc rw tidb opt num 3000 con 9 len 4 SI (SI) ", :time 22193/93}
+ {:param "dbcdc rw tidb opt num 2000 con 9 len 12 SI (SI) ", :time 41039/186}
+ {:param "dbcdc rw tidb pess num 2000 con 9 len 12 SI (SI) ", :time 20812/93}
+ {:param "dbcdc rw tidb pess num 3000 con 3 len 12 SI (SI) ", :time 34204/93}
+ {:param "dbcdc rw tidb opt num 3000 con 9 len 12 SI (SI) ", :time 30326/93}
+ {:param "dbcdc rw tidb opt num 3000 con 9 len 20 SI (SI) ", :time 78581/186}
+ {:param "dbcdc rw tidb pess num 4000 con 9 len 12 SI (SI) ", :time 40793/93}
+ {:param "dbcdc rw tidb pess num 1000 con 9 len 12 SI (SI) ", :time 6747/62}
+ {:param "dbcdc rw tidb opt num 3000 con 15 len 12 SI (SI) ", :time 1927/6}
+ {:param "dbcdc rw tidb pess num 3000 con 9 len 20 SI (SI) ", :time 78191/185}
+ {:param "dbcdc rw tidb pess num 3000 con 9 len 8 SI (SI) ", :time 17665/62})
