@@ -35,8 +35,21 @@
   (case level
     :serializable       :serializable
     :snapshot-isolation :repeatable-read
+    :repeatable-read    :repeatable-read
     :read-committed     :read-committed
     :read-uncommitted   :read-uncommitted))
+
+(defn check-in-txn
+  [^Connection conn]
+  (try
+    (j/execute! conn ["SAVEPOINT upsert"])
+    (info :set-iso-level (set-transaction-isolation! conn :snapshot-isolation))
+    (j/execute! conn ["RELEASE SAVEPOINT upsert"])
+    false
+    (catch Exception e
+      (do (info "In transaction well " (.getMessage e))
+          (j/execute! conn ["ROLLBACK TO SAVEPOINT upsert"])
+          true))))
 
 (defn create-table
   [^Connection conn table]
@@ -60,7 +73,9 @@
 ;                            [(str "select val from " table " where key = ?") key]
                             [(str "SELECT val FROM " table " WHERE key = " key)]
                             {:builder-fn rs/as-unqualified-lower-maps})]
-    (info "pg-read" res)
+    (info "op: read (" key "), res: " res ", state :"
+          (j/execute! conn ["SELECT current_setting('transaction_isolation')"])
+          "in-txn? " (check-in-txn conn))
     (when-let [v (:val res)]
       (if (string? v)
         (long (Long/parseLong v))
@@ -90,7 +105,10 @@
                    " (key, val) VALUES (" key ", " value ")"
                    " ON CONFLICT (key) DO UPDATE SET"
                    " val = " value " WHERE t.key = " key)])]
-    (info "pg-write" res)
+    (info "op: write (" key value "), res: " res ", state :"
+          (j/execute! conn ["SELECT current_setting('transaction_isolation')"])
+          "in-txn? " (check-in-txn conn))
+
     (when-not (pos? (res :next.jdbc/update-count))
       (throw+ {:type ::write-but-not-take-effect
                :key  key
@@ -109,3 +127,51 @@
       (throw+ {:type ::write-but-not-take-effect
                :key  key
                :val  value}))))
+
+(defn insert-savepoint
+  "Performs an initial insert of a key with initial element e. Catches
+  duplicate key exceptions, returning true if succeeded. If the insert fails
+  due to a duplicate key, it'll break the rest of the transaction, assuming
+  we're in a transaction, so we establish a savepoint before inserting and roll
+  back to it on failure."
+  [conn table k v]
+  (try
+    (j/execute! conn ["SAVEPOINT upsert"])
+    (info :insert (j/execute! conn
+                              [(str "INSERT INTO " table " (key, val)"
+                                    " VALUES ('" k "','" v "')")]))
+    (j/execute! conn ["RELEASE SAVEPOINT upsert"])
+    true
+    (catch Exception e
+      (if (re-find #"duplicate key value" (.getMessage e))
+        (do (info "insert failed: " (.getMessage e))
+            (j/execute! conn ["ROLLBACK TO SAVEPOINT upsert"])
+            false)
+        (throw e)))))
+
+(defn update-savepoint
+  "Performs an update of a key k, adding element e. Returns true if the update
+  succeeded, false otherwise."
+  [conn table k v]
+  (let [query (str "UPDATE " table " SET val = '" v "' WHERE key = '" k "'")
+        res (-> conn
+                (j/execute-one! [query]))]
+    (info :update res)
+    (-> res
+        :next.jdbc/update-count
+        pos?)))
+
+(defn write-varchar-savepoint
+  [^Connection conn table key value]
+  (or (update-savepoint conn table key value)
+                   ; No dice, fall back to an insert
+      (insert-savepoint conn table key value)
+                   ; OK if THAT failed then we probably raced with another
+                   ; insert; let's try updating again.
+      (update-savepoint conn table key value)
+                   ; And if THAT failed, all bets are off. This happens even
+                   ; under SERIALIZABLE, but I don't think it technically
+                   ; VIOLATES serializability.
+      (throw+ {:type     ::homebrew-upsert-failed
+               :key      key
+               :element  value})))
