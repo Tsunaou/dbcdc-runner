@@ -179,6 +179,11 @@
 
             #"conflicts with committed transaction"
             (assoc ~op :type :info, :error :txn-conflict)
+            #"错误: 由于同步更新而无法串行访问"
+            (assoc ~op :type :info, :error :no-serial-access)
+
+            #"错误: 检测到死锁"
+            (assoc ~op :type :info, :error :deadlock-detected)
 
             (throw e#)))
 
