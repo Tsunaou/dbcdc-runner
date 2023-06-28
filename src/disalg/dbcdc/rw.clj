@@ -88,14 +88,22 @@
       (when (= (:database test) :postgresql)
         (j/execute! conn [(str "set application_name = 'jepsen process "
                                (:process op) "'")]))
-      (c/set-transaction-isolation! conn (:isolation test)))
+      (c/set-transaction-isolation! conn (:isolation test) test))
 
     (c/with-errors op
       (let [isolation (c/isolation-mapping (:isolation test) test)
             txn       (:value op)
-            txn'      (j/with-transaction [t conn
-                                           {:isolation isolation}]
-                        (mapv (partial mop! t test) txn))]
+            ;; txn'      (j/with-transaction [t conn
+            ;;                                {:isolation isolation}]
+            ;;             (mapv (partial mop! t test) txn))
+            txn'      (try
+                        (let [_    (j/execute! conn ["BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ"])
+                              exec (mapv (partial mop! conn test) txn)
+                              _    (j/execute! conn ["COMMIT"])]
+                          exec)
+                        (catch Exception e
+                          (j/execute-one! conn ["ROLLBACK"])
+                          (throw e)))]
         (assoc op :type :ok, :value txn'))))
 
   (teardown! [_ test])

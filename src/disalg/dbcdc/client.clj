@@ -38,7 +38,7 @@
 
 (defn set-transaction-isolation!
   "Sets the transaction isolation level on a connection. Returns conn."
-  [^Connection conn level]
+  [^Connection conn level test]
   (let [db (:database test)
         res (case db
               :postgresql (pg/set-transaction-isolation! conn level)
@@ -77,7 +77,7 @@
   (let [db (:database test)
         res (case db
               :postgresql (if (:varchar-table test)
-                            (pg/write-varchar conn table (str key) (str value))
+                            (pg/write-varchar-savepoint conn table (str key) (str value))
                             (pg/write conn table key value))
               :mysql      (mysql/write conn table key value)
               :tidb       (mysql/write conn table key value)
@@ -158,6 +158,32 @@
 
             #"ERROR: duplicate key value"
             (assoc ~op :type :info, :error :duplicate-key-value)
+
+            #"expired or aborted by a conflict"
+            (assoc ~op :type :info, :error :txn-conflict)
+
+            #"ERROR: Transaction aborted:"
+            (assoc ~op :type :info, :error :txn-aborted)
+
+            #"ERROR: Unknown transaction, could be recently aborted"
+            (assoc ~op :type :info, :error :unknown-txn)
+
+            #"conflicts with higher priority transaction"
+            (assoc ~op :type :info, :error :conflict-with-higher-priority)
+
+            #"ERROR: Restart read required at:"
+            (assoc ~op :type :info, :error :restart-read-required)
+
+            #"ERROR: Value write after transaction start:"
+            (assoc ~op :type :info, :error :write-after-start)
+
+            #"conflicts with committed transaction"
+            (assoc ~op :type :info, :error :txn-conflict)
+            #"错误: 由于同步更新而无法串行访问"
+            (assoc ~op :type :info, :error :no-serial-access)
+
+            #"错误: 检测到死锁"
+            (assoc ~op :type :info, :error :deadlock-detected)
 
             (throw e#)))
 

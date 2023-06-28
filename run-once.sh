@@ -1,15 +1,15 @@
 #!/bin/bash
 
-for i in {1..1}
+for i in {1..20}
 do
 
 lein run test-all -w rw \
---max-writes-per-key 4 \
+--max-writes-per-key 24 \
 --txn-num 500 \
---concurrency 5 \
+--concurrency 20 \
 --max-txn-length 8 \
 --time-limit 600 \
--r 500 \
+-r 1000 \
 --node dummy-node \
 --isolation snapshot-isolation \
 --expected-consistency-model snapshot-isolation \
@@ -17,8 +17,7 @@ lein run test-all -w rw \
 --nemesis none \
 --existing-postgres \
 --no-ssh \
---database postgresql \
---varchar-table
+--database postgresql
 
 # java -jar yb-txn-parser.jar \
 # -logDir /home/young/disk1/yb-data/tserver/logs \
