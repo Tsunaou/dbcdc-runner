@@ -93,17 +93,18 @@
     (c/with-errors op
       (let [isolation (c/isolation-mapping (:isolation test) test)
             txn       (:value op)
-            ;; txn'      (j/with-transaction [t conn
-            ;;                                {:isolation isolation}]
-            ;;             (mapv (partial mop! t test) txn))
-            txn'      (try
-                        (let [_    (j/execute! conn ["BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ"])
-                              exec (mapv (partial mop! conn test) txn)
-                              _    (j/execute! conn ["COMMIT"])]
-                          exec)
-                        (catch Exception e
-                          (j/execute-one! conn ["ROLLBACK"])
-                          (throw e)))]
+            ;; TODO:下面的代码是执行具体的事务，需要针对不同的数据库进行适配
+            txn'      (j/with-transaction [t conn 
+                                           {:isolation isolation}]
+                        (mapv (partial mop! t test) txn))]
+            ;; txn'      (try
+            ;;             (let [_    (j/execute! conn ["BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ"])
+            ;;                   exec (mapv (partial mop! conn test) txn)
+            ;;                   _    (j/execute! conn ["COMMIT"])]
+            ;;               exec)
+            ;;             (catch Exception e
+            ;;               (j/execute-one! conn ["ROLLBACK"])
+            ;;               (throw e)))]
         (assoc op :type :ok, :value txn'))))
 
   (teardown! [_ test])

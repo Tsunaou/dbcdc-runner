@@ -10,7 +10,8 @@
                  [org.postgresql/postgresql "42.2.12"]
                  [mysql/mysql-connector-java "8.0.32"]
                  [cheshire "5.10.0"]
-                 [clj-wallhack "1.0.1"]]
+                 [clj-wallhack "1.0.1"]
+                 [clj-http "3.12.3"]]
   :jvm-opts ["-Djava.awt.headless=true"]
   :main disalg.dbcdc
   :repl-options {:init-ns disalg.dbcdc})

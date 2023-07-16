@@ -12,8 +12,10 @@
              [control :as ctrl]]
             [disalg.dbcdc
              [rw :as rw]
-             [nemesis :as nemesis]]
-            [jepsen.generator :as gen]))
+             [nemesis :as nemesis]
+             [gen :as cdc-gen]]
+            [jepsen.generator :as gen]
+            [disalg.dbcdc.gen :as cdc-gen]))
 
 (def workloads
   {:rw      rw/workload
@@ -91,7 +93,7 @@
                         (->> (:generator workload)
                              (gen/stagger (/ (:rate opts)))
                              (gen/nemesis (:generator nemesis))
-                             (gen/limit (:txn-num opts))
+                             (cdc-gen/limit-ok (:txn-num opts))
                              (gen/time-limit (:time-limit opts))))})))
 (def cli-opts
   "Additional CLI options"
