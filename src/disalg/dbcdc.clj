@@ -159,8 +159,8 @@
    [nil "--database DATABASE" "Which database should we test?"
     :parse-fn keyword
     :default :postgresql
-    :validate [#{:postgresql, :mysql, :tidb}
-               "Should be one of postgresql, mysql, tidb"]]
+    :validate [#{:postgresql, :mysql, :tidb, :dgraph}
+               "Should be one of postgresql, mysql, tidb, dgraph"]]
 
    [nil "--varchar-table" "If set, the fields in the tested table will be varchar(16)."
     :default false]

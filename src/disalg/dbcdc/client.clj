@@ -13,27 +13,53 @@
             [disalg.dbcdc.impls
              [postgresql :as pg]
              [mysql :as mysql]
-             [oracle :as oracle]]
+             [oracle :as oracle]
+             [dgraph :as dgraph]]
             [jepsen.db :as db]
             [disalg.dbcdc.impls.postgresql :as pg])
   (:import (java.sql Connection)))
+
+
+(def relation-databases
+  [:mysql :postgresql :tidb])
+
+(defn relation-db?
+  [database]
+  (contains? relation-databases database))
+
+;; For open the connection to database
+(defn open-nosql
+  [spec database]
+  (case database
+    :dgraph (dgraph/open-draph spec) ;; return a url for http operations
+    :mongo nil
+    "Invalid database in open-nosql!"))
+
+(defn open-relational
+  [spec]
+  (let [ds    (j/get-datasource spec)
+        conn  (j/get-connection ds)]
+    conn))
 
 (defn open
   "Opens a connection to the given node."
   [test node]
   (let [spec-map  (read-spec)
-        spec  (spec-map (:database test))
-        ds    (j/get-datasource spec)
-        conn  (j/get-connection ds)]
-    conn))
+        database  (:database test)
+        spec      (spec-map database)]
+    (if (relation-db? database)
+      (open-relational spec)
+      (open-nosql spec database))))
 
+;; For isolation setting
 (defn isolation-mapping
   [isolation test]
   (let [db (:database test)]
     (case db
       :postgresql (pg/isolation-mapping isolation)
       :mysql      (mysql/isolation-mapping isolation)
-      :tidb      (mysql/isolation-mapping isolation)
+      :tidb       (mysql/isolation-mapping isolation)
+      :dgraph      :snapshot-isolation ;; only support SI
       (str "isolation-mapping not be implemented for database " db))))
 
 (defn set-transaction-isolation!
@@ -44,8 +70,10 @@
               :postgresql (pg/set-transaction-isolation! conn level)
               :mysql      (pg/set-transaction-isolation! conn level)
               :tidb       (mysql/set-transaction-isolation! conn level)
+              :dgraph     nil ;; not need for dgraph to set isolation level
               (str "set-transaction-isolation! not be implemented for database " db))]))
 
+;; For create table to hold testing data and operations
 (defn create-table
   [^Connection conn table test]
   (let [db (:database test)
@@ -58,6 +86,7 @@
                             (when (= :opt (:tidb-mode test))
                               (j/execute-one! conn ["SET GLOBAL tidb_txn_mode = 'optimistic';"])) ;; 开启乐观事务
                             (mysql/create-table conn table))
+              :dgraph     nil ;; TODO: dgraph 中需要创建表吗？
               (str "create-table not be implemented for database " db))]))
 
 (defn read
@@ -85,18 +114,36 @@
     res))
 
 
-(defn close!
+;; For close the connection to database
+(defn close-nosql
+  [conn database]
+  (case database
+    :dgraph nil ;; no need for draph
+    :mongo nil
+    "Invalid database in close-nosql!"))
+
+(defn close-relational
   "Closes a connection."
   [^java.sql.Connection conn]
   (.close conn))
 
+(defn close!
+  "Closes a connection."
+  [test conn]
+  (let [database (:database test)]
+    (if (relation-db? database)
+      (close-relational conn)
+      (close-nosql conn database))))
+
+;; Handle error or other situations
+;; TODO:这里目前只有 PG 系列的数据库会调用到这个分支，秉持能用就行的原则，暂时不动
 (defn await-open
   "Waits for a connection to node to become available, returning conn. Helpful
   for starting up."
-  [node]
+  [test node]
   (with-retry [tries 100]
     (info "Waiting for" node "to come online...")
-    (let [conn (open node)]
+    (let [conn (open test node)]
       (try (j/execute-one! conn
                            ["create table if not exists jepsen_await ()"])
            conn

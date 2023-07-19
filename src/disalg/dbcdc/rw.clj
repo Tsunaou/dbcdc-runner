@@ -17,7 +17,8 @@
             [next.jdbc.result-set :as rs]
             [next.jdbc.sql.builder :as sqlb]
             [slingshot.slingshot :refer [try+ throw+]]
-            [disalg.dbcdc.client :as c]))
+            [disalg.dbcdc.client :as c]
+            [disalg.dbcdc.impls.dgraph :as dgraph]))
 
 (def default-table-count 1)
 
@@ -43,6 +44,30 @@
            :w (let [_ (c/write conn table k v test)]
                 v))]))
 
+(defn execute-txn-retional
+  [test conn txn isolation]
+  (j/with-transaction [t conn
+                       {:isolation isolation}]
+    (let [txn' (mapv (partial mop! t test) txn)]
+      {:type :ok :value txn'})))
+
+(defn execute-txn-nosql
+  [test conn txn isolation]
+  (let [database (:database test)]
+    (case database
+      (case database
+        :dgraph (dgraph/execute-txn conn txn)
+        :mongo nil
+        "Invalid database in execute-txn-nosql"))))
+
+(defn execute-txn 
+  "如果操作成功返回 {:type :ok :value 操作后事务, ... 其他自定义键值对>}"
+  [test conn txn isolation]
+  (let [database (:database test)]
+    (if (c/relation-db? database)
+      (execute-txn-retional test conn txn isolation)
+      (execute-txn-nosql test conn txn isolation))))
+
 ; initialized? is an atom which we set when we first use the connection--we set
 ; up initial isolation levels, logging info, etc. This has to be stateful
 ; because we don't necessarily know what process is going to use the connection
@@ -66,6 +91,7 @@
       (with-retry [conn  conn
                    tries 10]
         (c/create-table conn (table-name i) test)
+        ;; TODO: 这里暂时只处理了 PG 系的建表异常
         (catch org.postgresql.util.PSQLException e
           (condp re-find (.getMessage e)
             #"duplicate key value violates unique constraint"
@@ -76,8 +102,8 @@
                   (throw e))
                 (info "Retrying IO error")
                 (Thread/sleep 1000)
-                (c/close! conn)
-                (retry (c/await-open node)
+                (c/close! test conn)
+                (retry (c/await-open test node)
                        (dec tries)))
 
             (throw e))))))
@@ -85,32 +111,21 @@
   (invoke! [_ test op]
     ; One-time connection setup
     (when (compare-and-set! initialized? false true)
+      ;; 这里是继承自 Jepsen 对 PG 测试，主要是用于调试的，对其他数据库没有特殊意义
       (when (= (:database test) :postgresql)
-        (j/execute! conn [(str "set application_name = 'jepsen process "
-                               (:process op) "'")]))
+        (j/execute! conn [(str "set application_name = 'jepsen process " (:process op) "'")]))
       (c/set-transaction-isolation! conn (:isolation test) test))
 
     (c/with-errors op
       (let [isolation (c/isolation-mapping (:isolation test) test)
             txn       (:value op)
-            ;; TODO:下面的代码是执行具体的事务，需要针对不同的数据库进行适配
-            txn'      (j/with-transaction [t conn 
-                                           {:isolation isolation}]
-                        (mapv (partial mop! t test) txn))]
-            ;; txn'      (try
-            ;;             (let [_    (j/execute! conn ["BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ"])
-            ;;                   exec (mapv (partial mop! conn test) txn)
-            ;;                   _    (j/execute! conn ["COMMIT"])]
-            ;;               exec)
-            ;;             (catch Exception e
-            ;;               (j/execute-one! conn ["ROLLBACK"])
-            ;;               (throw e)))]
-        (assoc op :type :ok, :value txn'))))
+            txn'      (execute-txn test conn txn isolation)]
+        (merge op txn'))))
 
   (teardown! [_ test])
 
   (close! [this test]
-    (c/close! conn)))
+    (c/close! test conn)))
 
 (defn rw-test
   [opts]
