@@ -17,7 +17,8 @@
             [next.jdbc.result-set :as rs]
             [next.jdbc.sql.builder :as sqlb]
             [slingshot.slingshot :refer [try+ throw+]]
-            [disalg.dbcdc.client :as c]
+            [disalg.dbcdc.utils.loader :as loader]
+            [disalg.dbcdc.utils.generator :as dbcop-gen]
             [disalg.dbcdc.impls.dgraph :as dgraph]))
 
 (def default-table-count 1)
@@ -72,14 +73,15 @@
 ; up initial isolation levels, logging info, etc. This has to be stateful
 ; because we don't necessarily know what process is going to use the connection
 ; at open! time.
-(defrecord Client [node conn initialized?]
+(defrecord Client [node conn initialized? variables]
   client/Client
   (open! [this test node]
     (let [c (c/open test node)]
       (assoc this
              :node          node
              :conn          c
-             :initialized?  (atom false))))
+             :initialized?  (atom false)
+             :variables     variables)))
 
   (setup! [_ test]
     ;; setup! 与指定线程数无关，只跟 nodes 数量有关。
@@ -91,6 +93,7 @@
       (with-retry [conn  conn
                    tries 10]
         (c/create-table conn (table-name i) test)
+        ;; TODO: 对于 dbcop workload，variables 的参数暂时不理会
         ;; TODO: 这里暂时只处理了 PG 系的建表异常
         (catch org.postgresql.util.PSQLException e
           (condp re-find (.getMessage e)
@@ -132,12 +135,28 @@
   {:generator (wr/gen opts)
    :checker   (wr/checker opts)})
 
-(defn workload
-  "A read-write register write workload."
-  [opts]
+(defn elle-rw-workload
+ [opts]
   (-> (rw-test (assoc (select-keys opts [:key-count
                                          :max-txn-length
                                          :max-writes-per-key])
                       :min-txn-length 1
                       :consistency-models [(:expected-consistency-model opts)]))
-      (assoc :client (Client. nil nil nil))))
+      (assoc :client (Client. nil nil nil nil))))
+
+(defn dbcop-rw-workload
+  [opts]
+  (let [workload-path (:dbcop-workload-path opts) ;; 获得 history.json 的路径
+        testcase      (loader/load-testcase workload-path) ;; 加载进 history.json 后
+        {:keys [_ variables txns]} testcase]
+    (-> {:generator (dbcop-gen/dbcop-generator opts txns)
+         :checker   (wr/checker {:consistency-models [(:expected-consistency-model opts)]})}
+        (assoc :client (Client. nil nil nil variables)))))
+
+(defn workload
+  "A read-write register write workload."
+  [opts]
+  (let [is-dbcop (:dbcop-workload opts)]
+    (if is-dbcop
+      (dbcop-rw-workload opts)
+      (elle-rw-workload opts))))

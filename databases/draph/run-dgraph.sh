@@ -1,6 +1,6 @@
 lein run test-all -w rw \
 --max-writes-per-key 24 \
---txn-num 500 \
+--txn-num 1000 \
 --concurrency 20 \
 --max-txn-length 8 \
 --time-limit 600 \
@@ -13,3 +13,6 @@ lein run test-all -w rw \
 --existing-postgres \
 --no-ssh \
 --database dgraph
+--dbcop-workload-path /tmp/generate/hist-00000.json \
+--dbcop-workload
+

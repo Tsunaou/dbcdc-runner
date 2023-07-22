@@ -15,7 +15,8 @@
              [nemesis :as nemesis]
              [gen :as cdc-gen]]
             [jepsen.generator :as gen]
-            [disalg.dbcdc.gen :as cdc-gen]))
+            [disalg.dbcdc.gen :as cdc-gen]
+            [disalg.dbcdc.utils.loader :as loader]))
 
 (def workloads
   {:rw      rw/workload
@@ -60,7 +61,7 @@
   "Given an options map from the command line runner (e.g. :nodes, :ssh,
   :concurrency, ...), constructs a test map."
   [opts]
-  (let [workload-name (:workload opts)
+  (let [workload-name (:workload opts)  
         workload      ((workloads workload-name) opts)
         db            jdb/noop
         os            os/noop
@@ -78,6 +79,10 @@
                        (short-isolation (:expected-consistency-model opts)) ")"
                        " " (str/join "," (map name (:nemesis opts))))
             :pure-generators true
+            :concurrency (if (:dbcop-workload opts)
+                           (let [testcase (loader/load-testcase (:dbcop-workload-path opts))]
+                             (:concurrency testcase))
+                           (:concurrency opts))
             :os   os
             :db   db
             :checker (checker/compose
@@ -169,7 +174,14 @@
     :parse-fn keyword
     :default :pess
     :validate [#{:pess, :opt}
-               "Should be pess or opt"]]])
+               "Should be pess or opt"]]
+
+   [nil "--dbcop-workload" "If set, use the dbcop generating workload"
+    :default false]
+
+   [nil "--dbcop-workload-path PATH" "The file specifies workload to be test"
+    :default "tmp/generate/hist-00000.json"
+    :parse-fn str]])
 
 (defn all-test-options
   "Takes base cli options, a collection of nemeses, workloads, and a test count,

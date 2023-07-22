@@ -6,12 +6,14 @@ import requests
 url = "http://175.27.241.31:8080/mutate?commitNow=true"
 headers = {'Content-Type': 'application/json'}
 
+# 删除表
+# curl -X POST localhost:8080/alter -d '{"drop_all": true}'
 
 def generate_txn(ops):
     query = "query { "
     query_count = 0
     mutations = []
-    for op in ops:
+    for op in ops: 
         if op["t"] == "r":
             query_count += 1
             q = "get%d(func: uid(%d)) { value } " % (query_count, op["k"])

@@ -11,7 +11,8 @@
                  [mysql/mysql-connector-java "8.0.32"]
                  [cheshire "5.10.0"]
                  [clj-wallhack "1.0.1"]
-                 [clj-http "3.12.3"]]
+                 [clj-http "3.12.3"]
+                 [org.clojure/data.json "0.2.1"]]
   :jvm-opts ["-Djava.awt.headless=true"]
   :main disalg.dbcdc
   :repl-options {:init-ns disalg.dbcdc})

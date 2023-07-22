@@ -22,9 +22,19 @@
 
 (defn send-request
   ([url req-data]
+   (info "send request for" url req-data)
    (http/post url {:headers headers :body (json/generate-string req-data)}))
   ([req-data]
    (send-request url-for-test req-data)))
+
+(defn drop-dgraph-table
+  [spec]
+  (let [{:keys [host port]} spec
+        url  (format "http://%s:%s/alter" host port)
+        cmd  {:drop_all true}
+        ret  (send-request url cmd)
+        {:keys [res stats]} ret]
+    (info url cmd ret)))
 
 (defn read?
   [[f _ _]]

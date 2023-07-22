@@ -16,12 +16,13 @@
              [oracle :as oracle]
              [dgraph :as dgraph]]
             [jepsen.db :as db]
-            [disalg.dbcdc.impls.postgresql :as pg])
+            [disalg.dbcdc.impls.postgresql :as pg]
+            [disalg.dbcdc.impls.dgraph :as dgraph])
   (:import (java.sql Connection)))
 
 
 (def relation-databases
-  [:mysql :postgresql :tidb])
+  #{:mysql :postgresql :tidb})
 
 (defn relation-db?
   [database]
@@ -86,7 +87,10 @@
                             (when (= :opt (:tidb-mode test))
                               (j/execute-one! conn ["SET GLOBAL tidb_txn_mode = 'optimistic';"])) ;; 开启乐观事务
                             (mysql/create-table conn table))
-              :dgraph     nil ;; TODO: dgraph 中需要创建表吗？
+              :dgraph     (let [spec-map  (read-spec)
+                                database  (:database test)
+                                spec      (spec-map database)]
+                            (dgraph/drop-dgraph-table spec)) ;; TODO: dgraph 中需要创建表吗？
               (str "create-table not be implemented for database " db))]))
 
 (defn read
