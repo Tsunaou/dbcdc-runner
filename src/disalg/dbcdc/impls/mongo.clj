@@ -315,6 +315,9 @@
 
 (defn create-collection!
   [^MongoDatabase db collection-name]
+  (let [coll (.getCollection db collection-name)
+        ret  (.drop coll)
+        _    (info "Drop collection" collection-name)])
   (.createCollection db collection-name))
 
 ;; Sessions
