@@ -57,6 +57,13 @@
    :read-committed      "RC"
    :read-uncommitted    "RU"})
 
+(def logging-overrides
+  "Custom log levels; Mongo's driver is... communicative"
+  {"jepsen.mongodb.client"          :error
+   "org.mongodb.driver.cluster"     :error
+   "org.mongodb.driver.client"      :error
+   "org.mongodb.driver.connection"  :error})
+
 (defn dbcdc-test
   "Given an options map from the command line runner (e.g. :nodes, :ssh,
   :concurrency, ...), constructs a test map."
@@ -79,6 +86,7 @@
                        (short-isolation (:expected-consistency-model opts)) ")"
                        " " (str/join "," (map name (:nemesis opts))))
             :pure-generators true
+            :logging {:overrides logging-overrides}
             :concurrency (if (:dbcop-workload opts)
                            (let [testcase (loader/load-testcase (:dbcop-workload-path opts))]
                              (:concurrency testcase))
@@ -164,8 +172,8 @@
    [nil "--database DATABASE" "Which database should we test?"
     :parse-fn keyword
     :default :postgresql
-    :validate [#{:postgresql, :mysql, :tidb, :dgraph}
-               "Should be one of postgresql, mysql, tidb, dgraph"]]
+    :validate [#{:postgresql, :mysql, :tidb, :dgraph, :mongodb}
+               "Should be one of postgresql, mysql, tidb, dgraph, mongodb"]]
 
    [nil "--varchar-table" "If set, the fields in the tested table will be varchar(16)."
     :default false]

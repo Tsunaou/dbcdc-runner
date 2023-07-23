@@ -36,6 +36,10 @@
         {:keys [res stats]} ret]
     (info url cmd ret)))
 
+(defn create-table
+  [spec]
+  (drop-dgraph-table spec))
+
 (defn read?
   [[f _ _]]
   (= f :r))

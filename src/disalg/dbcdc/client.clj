@@ -14,12 +14,19 @@
              [postgresql :as pg]
              [mysql :as mysql]
              [oracle :as oracle]
-             [dgraph :as dgraph]]
+             [dgraph :as dgraph]
+             [mongo :as mongo]]
             [jepsen.db :as db]
             [disalg.dbcdc.impls.postgresql :as pg]
-            [disalg.dbcdc.impls.dgraph :as dgraph])
+            [disalg.dbcdc.impls.dgraph :as dgraph]
+            [disalg.dbcdc.impls.mongo :as mongo])
   (:import (java.sql Connection)))
 
+(defn get-spec
+  [test]
+  (let [spec-map  (read-spec)
+        database  (:database test)]
+    (spec-map database)))
 
 (def relation-databases
   #{:mysql :postgresql :tidb})
@@ -33,8 +40,7 @@
   [spec database]
   (case database
     :dgraph (dgraph/open-draph spec) ;; return a url for http operations
-    :mongo nil
-    "Invalid database in open-nosql!"))
+    :mongodb (mongo/open spec)))
 
 (defn open-relational
   [spec]
@@ -60,8 +66,9 @@
       :postgresql (pg/isolation-mapping isolation)
       :mysql      (mysql/isolation-mapping isolation)
       :tidb       (mysql/isolation-mapping isolation)
-      :dgraph      :snapshot-isolation ;; only support SI
-      (str "isolation-mapping not be implemented for database " db))))
+      :dgraph     :snapshot-isolation ;; only support SI
+      :mongodb    :snapshot-isolation ;; only support SI
+      )))
 
 (defn set-transaction-isolation!
   "Sets the transaction isolation level on a connection. Returns conn."
@@ -72,11 +79,12 @@
               :mysql      (pg/set-transaction-isolation! conn level)
               :tidb       (mysql/set-transaction-isolation! conn level)
               :dgraph     nil ;; not need for dgraph to set isolation level
-              (str "set-transaction-isolation! not be implemented for database " db))]))
+              :mongodb    nil ;; not need for mongodb to set isolation level
+              )]))
 
 ;; For create table to hold testing data and operations
 (defn create-table
-  [^Connection conn table test]
+  [conn table test]
   (let [db (:database test)
         res (case db
               :postgresql (if (:varchar-table test)
@@ -87,11 +95,10 @@
                             (when (= :opt (:tidb-mode test))
                               (j/execute-one! conn ["SET GLOBAL tidb_txn_mode = 'optimistic';"])) ;; 开启乐观事务
                             (mysql/create-table conn table))
-              :dgraph     (let [spec-map  (read-spec)
-                                database  (:database test)
-                                spec      (spec-map database)]
-                            (dgraph/drop-dgraph-table spec)) ;; TODO: dgraph 中需要创建表吗？
-              (str "create-table not be implemented for database " db))]))
+              :dgraph     (let [spec      (get-spec test)]
+                            (dgraph/create-table spec)) ;; TODO: dgraph 中需要创建表吗？
+              :mongodb    (let [spec       (get-spec test)]
+                            (mongo/create-table (:conn conn) spec)))]))
 
 (defn read
   [^Connection conn table key test]
@@ -101,8 +108,7 @@
                             (pg/read-varchar conn table (str key))
                             (pg/read conn table key))
               :mysql      (mysql/read conn table key)
-              :tidb       (mysql/read conn table key)
-              (str "read not be implemented for database " db))]
+              :tidb       (mysql/read conn table key))]
     res))
 
 (defn write
@@ -113,8 +119,7 @@
                             (pg/write-varchar-savepoint conn table (str key) (str value))
                             (pg/write conn table key value))
               :mysql      (mysql/write conn table key value)
-              :tidb       (mysql/write conn table key value)
-              (str "write not be implemented for database " db))]
+              :tidb       (mysql/write conn table key value))]
     res))
 
 
@@ -123,8 +128,7 @@
   [conn database]
   (case database
     :dgraph nil ;; no need for draph
-    :mongo nil
-    "Invalid database in close-nosql!"))
+    :mongodb nil))
 
 (defn close-relational
   "Closes a connection."

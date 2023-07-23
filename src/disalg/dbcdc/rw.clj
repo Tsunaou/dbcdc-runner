@@ -19,7 +19,9 @@
             [slingshot.slingshot :refer [try+ throw+]]
             [disalg.dbcdc.utils.loader :as loader]
             [disalg.dbcdc.utils.generator :as dbcop-gen]
-            [disalg.dbcdc.impls.dgraph :as dgraph]))
+            [disalg.dbcdc.impls.dgraph :as dgraph]
+            [disalg.dbcdc.impls.mongo :as mongo]
+            [disalg.dbcdc.client :as c]))
 
 (def default-table-count 1)
 
@@ -58,8 +60,9 @@
     (case database
       (case database
         :dgraph (dgraph/execute-txn conn txn)
-        :mongo nil
-        "Invalid database in execute-txn-nosql"))))
+        :mongodb (let [{:keys [conn session]} conn
+                     spec   (c/get-spec test)]
+                 (mongo/execute-txn conn session txn spec test))))))
 
 (defn execute-txn 
   "如果操作成功返回 {:type :ok :value 操作后事务, ... 其他自定义键值对>}"
@@ -95,6 +98,7 @@
         (c/create-table conn (table-name i) test)
         ;; TODO: 对于 dbcop workload，variables 的参数暂时不理会
         ;; TODO: 这里暂时只处理了 PG 系的建表异常
+        ;; TODO: MongoDB 考虑要不要加入
         (catch org.postgresql.util.PSQLException e
           (condp re-find (.getMessage e)
             #"duplicate key value violates unique constraint"
@@ -118,7 +122,6 @@
       (when (= (:database test) :postgresql)
         (j/execute! conn [(str "set application_name = 'jepsen process " (:process op) "'")]))
       (c/set-transaction-isolation! conn (:isolation test) test))
-
     (c/with-errors op
       (let [isolation (c/isolation-mapping (:isolation test) test)
             txn       (:value op)

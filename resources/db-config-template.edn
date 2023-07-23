@@ -9,4 +9,21 @@
  :tidb       {:dbtype    "mysql"
               :host      "host"
               :port      port
-              :dbname    "dbname"}}
+              :dbname    "dbname"}
+ 
+  :mysql     {:dbtype    "mysql"
+              :host      "host"
+              :port      port
+              :dbname    "dbname"
+              :user      "user"
+              :password  "password"}
+
+ :dgraph     {:dbyte     "dgraph"
+              :host      "host"
+              :port      port}
+
+ :mongodb    {:dbyte     "mongodb"
+              :host      "host"
+              :port      port
+              :dbname    "dbname"
+              :collname  "collname"}}
