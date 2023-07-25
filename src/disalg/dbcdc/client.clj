@@ -254,4 +254,11 @@
             #"Write conflict, txnStartTS="
             (assoc ~op :type :fail, :error [:write-conflict (.getMessage e#)])
 
+            (throw e#)))
+        
+        (catch com.mongodb.MongoCommandException e#
+          (condp re-find (.getMessage e#)
+            #"WriteConflict"
+            (assoc ~op :type :fail, :error [:write-conflict (.getMessage e#)])
+            
             (throw e#)))))

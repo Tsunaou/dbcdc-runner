@@ -1,12 +1,12 @@
-../../dbcop generate -e 15 -n 50 -t 120 -v 1000 --key_distrib zipf -d /tmp/generate/
-../../dbcop convert -d /tmp/generate/ --from bincode
+dbcop generate -e 15 -n 5 -t 120 -v 100 --key_distrib zipf -d /tmp/generate/mongodb/
+dbcop convert -d /tmp/generate/mongodb/ --from bincode
 
 echo "start time: " >> time.txt
 date "+%Y-%m-%d %H:%M:%S" >> time.txt
 
 lein run test-all -w rw \
 --max-writes-per-key 5000 \
---txn-num 5000 \
+--txn-num 500 \
 --concurrency 50 \
 --max-txn-length 15 \
 --time-limit 1000000 \
@@ -18,7 +18,7 @@ lein run test-all -w rw \
 --existing-postgres \
 --no-ssh \
 --database mongodb \
---dbcop-workload-path /tmp/generate/hist-00000.json \
+--dbcop-workload-path /tmp/generate/mongodb/hist-00000.json \
 --dbcop-workload
 
 echo "finish time: " >> time.txt

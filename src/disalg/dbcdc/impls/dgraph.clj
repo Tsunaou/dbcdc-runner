@@ -53,7 +53,7 @@
   (format "query {%s}"
           (str/join (map-indexed
                      (fn [idx [f k v]]
-                       (format "get%d(func: uid(%d)) { value } " (inc idx) k))
+                       (format "get%d(func: uid(%d)) { value } " (inc idx) (inc k)))
                      reads))))
 
 (defn gen-mutations
@@ -61,7 +61,7 @@
   (if (empty? writes)
     [{:set {"fake_data" 233}}]
     (mapv (fn [[f k v]]
-            {:set {"uid" k "value" v}}) writes)))
+            {:set {"uid" (inc k) "value" v}}) writes)))
 
 (defn gen-txn-req
   [reads writes]

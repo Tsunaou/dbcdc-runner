@@ -78,7 +78,7 @@
   [spec]
   (let [node   (:host spec)
         port   (:port spec)
-        _      (info "node" node "port" port "spec" spec)
+        ;; _      (info "node" node "port" port "spec" spec)
         conn   (MongoClients/create
                 (.. (MongoClientSettings/builder)
                     (applyToClusterSettings (with-block builder
