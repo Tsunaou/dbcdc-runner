@@ -319,7 +319,7 @@
   (let [coll (.getCollection db collection-name)
         ret  (.drop coll)
         _    (info "Drop collection" collection-name)])
-  (.dropDatabase db))
+  (.drop db))
 
 ;; Sessions
 
