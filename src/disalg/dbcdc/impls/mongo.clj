@@ -314,13 +314,12 @@
   [^MongoDatabase db collection-name]
   (.getCollection db collection-name))
 
-; TODO drop the whole db, no need to create collection, just add shard
-(defn create-collection!
+(defn drop-database!
   [^MongoDatabase db collection-name]
   (let [coll (.getCollection db collection-name)
         ret  (.drop coll)
         _    (info "Drop collection" collection-name)])
-  (.createCollection db collection-name))
+  (.dropDatabase db))
 
 ;; Sessions
 
@@ -377,34 +376,33 @@
          parse))))
 
 (defn upsert!
-  "Ensures the existence of the given document, a map with at minimum an :_id
+  "Ensures the existence of the given document, a map with at minimum an :key
   key."
   ([^MongoCollection coll doc]
    (upsert! nil coll doc))
   ([^ClientSession session ^MongoCollection coll doc]
-   (assert (:_id doc))
+   (assert (:key doc))
    (parse
     (if session
       (.replaceOne coll
                    session
-                   (Filters/eq "key" (:_id doc))
+                   (Filters/eq "key" (:key doc))
                    (->doc doc)
                    (.upsert (ReplaceOptions.) true))
       (.replaceOne coll
-                   (Filters/eq "key" (:_id doc))
+                   (Filters/eq "key" (:key doc))
                    (->doc doc)
                    (.upsert (ReplaceOptions.) true))))))
 
 
 (defn create-table
   [conn spec]
-  ; TODO drop other collections in this db before sharding
   ; db.createCollection() can be omitted if sh.shardCollection() has been executed
   (let [dbname    (:dbname spec)
         collname  (:collname spec)
         db        (db conn dbname nil)
         _         (info "db" db)
-        _         (create-collection! db collname)]
+        _         (drop-database! db collname)]
     (info "Collection" dbname "." collname " created")
     (admin-command!
      conn {:shardCollection  (str dbname "." collname)
