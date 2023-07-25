@@ -26,7 +26,9 @@
                                      ReturnDocument
                                      Sorts
                                      Updates
-                                     UpdateOptions)
+                                     UpdateOptions
+                                     Indexes
+                                     IndexOptions)
            (com.mongodb.client.result UpdateResult)
            (com.mongodb.session ClientSession)
            (org.bson Document)))
@@ -321,6 +323,14 @@
         _    (info "Drop collection" collection-name)])
   (.drop db))
 
+(defn create-index!
+  [^MongoDatabase db collection-name]
+  (let [coll (.getCollection db collection-name)
+        index-options (IndexOptions.)
+        index-options (.unique index-options true)
+        ret  (.createIndex coll (Indexes/ascending ["key"]) index-options)
+        _    (info "Create index" collection-name)]))
+
 ;; Sessions
 
 (defn start-session
@@ -408,7 +418,11 @@
      conn {:shardCollection  (str dbname "." collname)
            :key              {:key :hashed}
            :numInitialChunks 7})
-    (info "Collection" dbname "." collname " sharded")))
+    (info "Collection" dbname "." collname " sharded"))
+  (let [dbname    (:dbname spec)
+        collname  (:collname spec)
+        db        (db conn dbname nil)
+        _         (create-index! db collname)]))
 
 (defn txn-options
   "Constructs options for this transaction."
