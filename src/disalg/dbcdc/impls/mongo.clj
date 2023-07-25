@@ -92,6 +92,7 @@
                                                          (minSize 1)
                                                          (maxSize 1)
                                                          (maxWaitTime 1 TimeUnit/SECONDS))))
+                    (retryReads false)
                     build))
         session (.startSession conn)
         res     {:conn conn
@@ -313,6 +314,7 @@
   [^MongoDatabase db collection-name]
   (.getCollection db collection-name))
 
+; TODO drop the whole db, no need to create collection, just add shard
 (defn create-collection!
   [^MongoDatabase db collection-name]
   (let [coll (.getCollection db collection-name)
@@ -367,7 +369,7 @@
   ([coll id]
    (find-one coll nil id))
   ([^MongoCollection coll ^ClientSession session id]
-   (let [filt (Filters/eq "_id" id)]
+   (let [filt (Filters/eq "key" id)]
      (-> (if session
            (.find coll session filt)
            (.find coll filt))
@@ -385,17 +387,19 @@
     (if session
       (.replaceOne coll
                    session
-                   (Filters/eq "_id" (:_id doc))
+                   (Filters/eq "key" (:_id doc))
                    (->doc doc)
                    (.upsert (ReplaceOptions.) true))
       (.replaceOne coll
-                   (Filters/eq "_id" (:_id doc))
+                   (Filters/eq "key" (:_id doc))
                    (->doc doc)
                    (.upsert (ReplaceOptions.) true))))))
 
 
 (defn create-table
   [conn spec]
+  ; TODO drop other collections in this db before sharding
+  ; db.createCollection() can be omitted if sh.shardCollection() has been executed
   (let [dbname    (:dbname spec)
         collname  (:collname spec)
         db        (db conn dbname nil)
@@ -404,7 +408,7 @@
     (info "Collection" dbname "." collname " created")
     (admin-command!
      conn {:shardCollection  (str dbname "." collname)
-           :key              {:_id :hashed}
+           :key              {:key :hashed}
            :numInitialChunks 7})
     (info "Collection" dbname "." collname " sharded")))
 
@@ -434,7 +438,7 @@
                      0
                      (long res))]
            [f k val])
-      :w (let [filt (Filters/eq "_id" k)
+      :w (let [filt (Filters/eq "key" k)
                doc  (->doc {:$set {:value v}})
                opts (.. (UpdateOptions.) (upsert true))
                res  (if session
