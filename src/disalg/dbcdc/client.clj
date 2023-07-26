@@ -197,48 +197,48 @@
             (assoc ~op :type :fail, :error [:deadlock (.getMessage e#)])
 
             #"An I/O error occurred"
-            (assoc ~op :type :info, :error :io-error)
+            (assoc ~op :type :fail, :error :io-error)
 
             #"connection has been closed"
-            (assoc ~op :type :info, :error :connection-has-been-closed)
+            (assoc ~op :type :fail, :error :connection-has-been-closed)
 
             #"ERROR: Operation expired"
-            (assoc ~op :type :info, :error :opeartion-expired)
+            (assoc ~op :type :fail, :error :opeartion-expired)
 
             #"ERROR: Operation failed"
-            (assoc ~op :type :info, :error :opeartion-failed)
+            (assoc ~op :type :fail, :error :opeartion-failed)
 
             #"ERROR: Query error"
-            (assoc ~op :type :info, :error :query-error)
+            (assoc ~op :type :fail, :error :query-error)
 
             #"ERROR: duplicate key value"
-            (assoc ~op :type :info, :error :duplicate-key-value)
+            (assoc ~op :type :fail, :error :duplicate-key-value)
 
             #"expired or aborted by a conflict"
-            (assoc ~op :type :info, :error :txn-conflict)
+            (assoc ~op :type :fail, :error :txn-conflict)
 
             #"ERROR: Transaction aborted:"
-            (assoc ~op :type :info, :error :txn-aborted)
+            (assoc ~op :type :fail, :error :txn-aborted)
 
             #"ERROR: Unknown transaction, could be recently aborted"
-            (assoc ~op :type :info, :error :unknown-txn)
+            (assoc ~op :type :fail, :error :unknown-txn)
 
             #"conflicts with higher priority transaction"
-            (assoc ~op :type :info, :error :conflict-with-higher-priority)
+            (assoc ~op :type :fail, :error :conflict-with-higher-priority)
 
             #"ERROR: Restart read required at:"
-            (assoc ~op :type :info, :error :restart-read-required)
+            (assoc ~op :type :fail, :error :restart-read-required)
 
             #"ERROR: Value write after transaction start:"
-            (assoc ~op :type :info, :error :write-after-start)
+            (assoc ~op :type :fail, :error :write-after-start)
 
             #"conflicts with committed transaction"
-            (assoc ~op :type :info, :error :txn-conflict)
+            (assoc ~op :type :fail, :error :txn-conflict)
             #"错误: 由于同步更新而无法串行访问"
-            (assoc ~op :type :info, :error :no-serial-access)
+            (assoc ~op :type :fail, :error :no-serial-access)
 
             #"错误: 检测到死锁"
-            (assoc ~op :type :info, :error :deadlock-detected)
+            (assoc ~op :type :fail, :error :deadlock-detected)
 
             (throw e#)))
 
