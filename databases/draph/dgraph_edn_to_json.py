@@ -65,13 +65,13 @@ def phase_edn(hist_edn_path):
 
         # 记录下中止事务的所有写操作
         if raw_type != kOK:
-            for raw_op in raw_value:  # type: ImmutableList
-                if raw_op[0] == kWrite:
-                    op = Operation(t='w', k=raw_op[1], v=raw_op[2])
-                    if op in failed_key_value_pairs:
-                        logger.warning(f"{op} is added before")
-                    failed_key_value_pairs.add(op)
-            log_progress(i, progress_step, hist_data_len)
+            # for raw_op in raw_value:  # type: ImmutableList
+            #     if raw_op[0] == kWrite:
+            #         op = Operation(t='w', k=raw_op[1], v=raw_op[2])
+            #         if op in failed_key_value_pairs:
+            #             logger.warning(f"{op} is added before")
+            #         failed_key_value_pairs.add(op)
+            # log_progress(i, progress_step, hist_data_len)
             continue
 
         session = raw_txn.get(kProcess)
