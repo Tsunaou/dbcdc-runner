@@ -8,10 +8,12 @@
             [jepsen [checker :as checker]
              [client :as client]
              [generator :as gen]
-             [util :as util]]
+             [util :as util]
+             [store :as store]]
             [jepsen.checker.timeline :as timeline]
             [jepsen.tests.cycle.append :as append]
             [jepsen.tests.cycle.wr :as wr]
+            [elle.rw-register :as r]
             [disalg.dbcdc [client :as c]]
             [next.jdbc :as j]
             [next.jdbc.result-set :as rs]
@@ -21,7 +23,9 @@
             [disalg.dbcdc.utils.generator :as dbcop-gen]
             [disalg.dbcdc.impls.dgraph :as dgraph]
             [disalg.dbcdc.impls.mongo :as mongo]
-            [disalg.dbcdc.client :as c]))
+            [disalg.dbcdc.client :as c]
+            [jepsen.checker :as checker]
+            [clojure.edn :as edn]))
 
 (def default-table-count 1)
 
@@ -64,13 +68,35 @@
                      spec   (c/get-spec test)]
                  (mongo/execute-txn conn session txn spec test))))))
 
-(defn execute-txn 
+(defn retry-func
+  [test conn txn isolation]
+  (try
+    (let [database (:database test)]
+      (if (c/relation-db? database)
+        (execute-txn-retional test conn txn isolation)
+        (execute-txn-nosql test conn txn isolation)))
+    (catch Exception e
+      (warn "retry" txn "with" (.getMessage e))
+      nil)))
+
+(defn retry?
+  [ret]
+  (let [_ (info "ret is" ret)]
+    (or
+     (nil? ret)
+     (not (map? ret))
+     (not= :ok (:type ret)))))
+
+(defn execute-txn
   "如果操作成功返回 {:type :ok :value 操作后事务, ... 其他自定义键值对>}"
   [test conn txn isolation]
-  (let [database (:database test)]
-    (if (c/relation-db? database)
-      (execute-txn-retional test conn txn isolation)
-      (execute-txn-nosql test conn txn isolation))))
+  (let [ret (atom nil)
+        idx (atom 0)]
+    (while (retry? @ret)
+      (let [_ (swap! idx inc)
+            _ (info "retry" txn "with ret" ret)]
+        (reset! ret (retry-func test conn txn isolation))))
+    @ret))
 
 ; initialized? is an atom which we set when we first use the connection--we set
 ; up initial isolation levels, logging info, etc. This has to be stateful
@@ -146,6 +172,24 @@
                       :min-txn-length 1
                       :consistency-models [(:expected-consistency-model opts)]))
       (assoc :client (Client. nil nil nil nil))))
+
+(defn save-only-ok-invoke
+  [history]
+  (let [_ (info "save-only-ok-invoke")]
+    (filterv (fn [op]
+            (or (= :ok (:type op)) (= :invoke (:type op))))
+          history)))
+
+(defn non-fail-checker
+  [opts]
+  (reify checker/Checker
+    (check [this test history opts]
+           (let [ok-history (save-only-ok-invoke history)
+                 _          (info "checking history" ok-history)]
+             (r/check (assoc opts :directory
+                             (.getCanonicalPath
+                              (store/path! test (:subdirectory opts) "elle")))
+                      ok-history)))))
 
 (defn dbcop-rw-workload
   [opts]

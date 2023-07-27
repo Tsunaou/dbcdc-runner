@@ -12,7 +12,7 @@ lein run test-all -w rw \
 --nemesis none \
 --existing-postgres \
 --no-ssh \
---database dgraph
+--database dgraph \
 --dbcop-workload-path /tmp/generate/hist-00000.json \
 --dbcop-workload
 
