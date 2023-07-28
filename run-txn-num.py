@@ -17,6 +17,13 @@ command_lein = "lein run test-all -w rw \
 --dbcop-workload-path ${dbcop-workload-path} \
 --dbcop-workload"
 
+command_drop = "wget --no-check-certificate --quiet \
+  --method POST \
+  --timeout=0 \
+  --header 'Content-Type: application/json' \
+  --body-data '{\"drop_all\": true}' \
+   'http://175.27.241.31:8080/alter'"
+
 
 def get_all_files_in_directory(directory_path):
     all_files = []
@@ -44,7 +51,7 @@ def generate_bincode(mode, txn_num):
     readp = 0.5
     nvar = 1000
     key_distrib = 'zipf'
-    nhist = 10
+    nhist = 1
 
     ntxn = txn_num / nnode
 
@@ -61,10 +68,10 @@ def generate_bincode(mode, txn_num):
 
         # print("命令输出：")
         # print(result.stdout)
-        #
+
         # print("错误输出：")
         # print(result.stderr)
-        #
+
         # print("返回码：", result.returncode)
 
     except subprocess.CalledProcessError as e:
@@ -96,6 +103,7 @@ def convert_to_json(path):
 
 if __name__ == '__main__':
 
+    os.system(command_drop)
     txn_nums = [5000, 10000, 100000, 500000, 1000000]
     for txn_num in txn_nums:
         generated_path = generate_bincode('txn_num', txn_num)
@@ -103,5 +111,6 @@ if __name__ == '__main__':
         for json_file in get_all_files_in_directory(generated_path):
             if not json_file.endswith(".json"):
                 continue
-            os.system(
-                command_lein.replace("${txn_num}", str(1.2 * txn_num)).replace("${dbcop-workload-path}", json_file))
+            os.system(command_lein.replace("${txn_num}", str(int(1.2 * txn_num))).replace("${dbcop-workload-path}",
+                                                                                          json_file))
+            os.system(command_drop)
