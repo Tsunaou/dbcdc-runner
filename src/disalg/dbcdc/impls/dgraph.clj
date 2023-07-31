@@ -22,7 +22,7 @@
 
 (defn send-request
   ([url req-data]
-   (info "send request for" url req-data)
+;;    (info "send request for" url req-data)
    (http/post url {:headers headers :body (json/generate-string req-data)}))
   ([req-data]
    (send-request url-for-test req-data)))
