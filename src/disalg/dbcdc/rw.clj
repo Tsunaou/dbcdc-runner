@@ -81,11 +81,10 @@
 
 (defn retry?
   [ret]
-  (let [_ (info "ret is" ret)]
-    (or
-     (nil? ret)
-     (not (map? ret))
-     (not= :ok (:type ret)))))
+  (or
+   (nil? ret)
+   (not (map? ret))
+   (not= :ok (:type ret))))
 
 (defn execute-txn
   "如果操作成功返回 {:type :ok :value 操作后事务, ... 其他自定义键值对>}"
@@ -94,7 +93,7 @@
         idx (atom 0)]
     (while (retry? @ret)
       (let [_ (swap! idx inc)
-            _ (info "retry" txn "with ret" ret)]
+            _ (info "retry" txn "with ret" @ret)]
         (reset! ret (retry-func test conn txn isolation))))
     @ret))
 

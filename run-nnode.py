@@ -4,7 +4,7 @@ from subprocess import PIPE
 import subprocess
 
 command_lein = "lein run test-all -w rw \
---txn-num 120000 \
+--txn-num 1200  \
 --time-limit 43200 \
 -r 10000 \
 --node dummy-node \
@@ -44,7 +44,7 @@ def generate_bincode(mode, variable):
     nvar = 1000
     key_distrib = 'zipf'
     nhist = 10
-    ntxn = 2000
+    ntxn = 20
     nevt = 15
 
     command = ['dbcop', 'generate', '-d', destination_path,

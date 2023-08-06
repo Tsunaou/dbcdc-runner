@@ -20,9 +20,13 @@
 (def url-for-test "http://175.27.241.31:8080/mutate?commitNow=true")
 (def txn-for-test [[:r 8 nil] [:w 5 1] [:w 8 1] [:w 9 1] [:r 9 nil] [:w 9 3]])
 
+;; -- Test for Expected some name. Got: lex.Item [7] --
+(def txn-for-expected-some-name
+  [[:w 58 6] [:w 458 1] [:w 1 12] [:w 581 1] [:w 160 3]])
+
 (defn send-request
   ([url req-data]
-;;    (info "send request for" url req-data)
+   (info "send request for" url req-data)
    (http/post url {:headers headers :body (json/generate-string req-data)}))
   ([req-data]
    (send-request url-for-test req-data)))
@@ -64,9 +68,12 @@
             {:set {"uid" (inc k) "value" v}}) writes)))
 
 (defn gen-txn-req
-  [reads writes]
-  {:query (gen-query reads)
-   :mutations (gen-mutations writes)})
+  [reads writes] 
+  (cond
+    (empty? reads)  {:mutations (gen-mutations writes)}
+    (empty? writes) {:query (gen-query reads)}
+    :else {:query (gen-query reads)
+           :mutations (gen-mutations writes)}))
 
 (defn fetch-response
   [response]
@@ -91,15 +98,14 @@
    (let [reads  (filterv read? txn)
          writes (filterv write? txn)
          response (send-request url (gen-txn-req reads writes))
-         res (fetch-response response)
-         _   (info "res is " res)]
+         res (fetch-response response)]
      (if-not (nil? res)
        (let [values (:values res)
              ts     (:ts res)]
          {:type :ok
           :value (vec (concat (merge-reads reads values) writes))
           :ts ts})
-       {:type :fail :error [:unknown res]})))
+       (throw (Exception. (str res))))))
   ([txn]
    (run-txn url-for-test txn)))
 

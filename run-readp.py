@@ -17,6 +17,13 @@ command_lein = "lein run test-all -w rw \
 --dbcop-workload-path ${dbcop-workload-path} \
 --dbcop-workload"
 
+command_drop = "wget --no-check-certificate --quiet \
+  --method POST \
+  --timeout=0 \
+  --header 'Content-Type: application/json' \
+  --body-data '{\"drop_all\": true}' \
+   'http://175.27.241.31:8080/alter'"
+
 
 def get_all_files_in_directory(directory_path):
     all_files = []
@@ -43,7 +50,7 @@ def generate_bincode(mode, variable):
     readp = 0.5
     nvar = 1000
     key_distrib = 'zipf'
-    nhist = 10
+    nhist = 1
     ntxn = 2000
     nevt = 15
 
@@ -97,6 +104,7 @@ if __name__ == '__main__':
 
     mode = 'readp'
     variables = [0.1, 0.3, 0.5, 0.7, 0.9]
+    os.system(command_drop)
     for variable in variables:
         generated_path = generate_bincode(mode, variable)
         convert_to_json(generated_path)
@@ -105,3 +113,4 @@ if __name__ == '__main__':
                 continue
             os.system(
                 command_lein.replace("${dbcop-workload-path}", json_file))
+            os.system(command_drop)
