@@ -123,8 +123,8 @@
   (let [url        (gen-url-for-create-session host port)
         response   (http/post url {:headers headers})
         body       (json/parse-string (:body response))
-        result (get body "result")]
-    (if-not (= result "Success")
+        result     (get body "result")]
+    (if (= result "Success")
       (let [session-id  (get body "session_id")]
         session-id)
       (throw (Exception. "创建会话失败")))))
@@ -216,7 +216,7 @@
         response  (http/post url {:headers headers :body data})
         body      (json/parse-string (:body response))
         result    (get body "result")]
-    (if-not (= result "Success")
+    (if (= result "Success")
       (let [start-ts  (get body "start_ts")
             commit-ts (get body "commit_ts")
             retvalues (get body "values")
