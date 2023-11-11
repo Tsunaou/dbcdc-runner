@@ -112,3 +112,125 @@
 (defn execute-txn
   [url txn]
   (run-txn url txn))
+
+;; 下面的暂时用于测试
+(defn gen-url-for-create-session
+  [host port]
+  (format "http://%s:%s/create_session" host port))
+
+(defn create-session-v2
+  [host port]
+  (let [url        (gen-url-for-create-session host port)
+        response   (http/post url {:headers headers})
+        body       (json/parse-string (:body response))
+        result (get body "result")]
+    (if-not (= result "Success")
+      (let [session-id  (get body "session_id")]
+        session-id)
+      (throw (Exception. "创建会话失败")))))
+
+(defn open-draph-v2
+  "获得到 Draph 的链接, 使用 python driver 的 http 代理，返回"
+  [spec]
+  (let [host       (:host spec)
+        port       (:port spec)
+        session-id (create-session-v2 host port)]
+    session-id))
+
+(defn gen-url-for-release-connection
+  [host port]
+  (format "http://%s:%s/release_connection" host port))
+
+
+(defn gen-data-for-release-connection
+  [session-id]
+  (json/generate-string
+   {:session_id session-id}))
+
+
+(defn release-connection-v2
+  [host port session-id]
+  (let [url        (gen-url-for-create-session host port)
+        data      (gen-data-for-release-connection session-id)
+        response  (http/post url {:headers headers :body data})
+        body      (json/parse-string (:body response))
+        result (get body "result")]
+    (when-not (= result "Success")
+      (throw (Exception. "Dgraph release connections failed")))))
+
+(defn close-session-v2
+  [session-id spec]
+  (let [host (:host spec)
+        port (:port spec)
+        res  (release-connection-v2 host port session-id)]
+    res))
+
+(defn gen-url-for-drop-all
+  [host port]
+  (format "http://%s:%s/drop_all" host port))
+
+
+(defn gen-data-for-drop-all
+  [session-id]
+  (json/generate-string
+   {:session_id session-id}))
+
+
+(defn drop-all-v2
+  [host port session-id]
+  (let [url        (gen-url-for-drop-all host port)
+        data      (gen-data-for-drop-all session-id)
+        response  (http/post url {:headers headers :body data})
+        body      (json/parse-string (:body response))
+        result (get body "result")]
+    (when-not (= result "Success")
+      (throw (Exception. "Dgraph drop all tables failed")))))
+
+(defn create-table-v2
+  [session-id spec]
+  (let [host (:host spec)
+        port (:port spec)
+        res  (drop-all-v2 host port session-id)]
+   res))
+
+(defn gen-url-for-commit-transaction
+  [host port]
+  (format "http://%s:%s/commit_transaction" host port))
+
+(defn gen-data-for-commit-transaction
+  [session-id txn]
+  (json/generate-string
+   {:session_id session-id
+    :ops (mapv
+          (fn [[f k v]]
+            (case f
+              :w [k v]
+              :r [k]))
+          txn)}))
+
+(defn commit-transaction-v2
+  [host port session-id txn]
+  (let [url       (gen-url-for-commit-transaction host port)
+        data      (gen-data-for-commit-transaction session-id txn)
+        _         (info "submit data" data)
+        response  (http/post url {:headers headers :body data})
+        body      (json/parse-string (:body response))
+        result    (get body "result")]
+    (if-not (= result "Success")
+      (let [start-ts  (get body "start_ts")
+            commit-ts (get body "commit_ts")
+            retvalues (get body "values")
+            values    (filterv (fn [x] (not (nil? x))) retvalues)
+            reads     (filterv read? txn)
+            writes    (filterv write? txn)]
+        {:type :ok
+         :values (vec (concat (merge-reads reads values) writes))
+         :ts {:rts start-ts :cts commit-ts}})
+      (throw (Exception. "失败的理由")))))
+
+(defn execute-txn-v2
+  [session-id spec txn]
+  (let [host (:host spec)
+        port (:port spec)
+        res  (commit-transaction-v2 host port session-id txn)]
+    res))

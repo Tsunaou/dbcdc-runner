@@ -39,7 +39,7 @@
 (defn open-nosql
   [spec database]
   (case database
-    :dgraph (dgraph/open-draph spec) ;; return a url for http operations
+    :dgraph (dgraph/open-draph-v2 spec) ;; return a url for http operations
     :mongodb (mongo/open spec)))
 
 (defn open-relational
@@ -95,8 +95,9 @@
                             (when (= :opt (:tidb-mode test))
                               (j/execute-one! conn ["SET GLOBAL tidb_txn_mode = 'optimistic';"])) ;; 开启乐观事务
                             (mysql/create-table conn table))
-              :dgraph     (let [spec      (get-spec test)]
-                            (dgraph/create-table spec)) ;; TODO: dgraph 中需要创建表吗？
+              :dgraph     (let [spec       (get-spec test)
+                                session-id conn]
+                            (dgraph/create-table-v2 session-id spec))
               :mongodb    (let [spec       (get-spec test)]
                             (mongo/create-table (:conn conn) spec)))]))
 
@@ -125,9 +126,11 @@
 
 ;; For close the connection to database
 (defn close-nosql
-  [conn database]
+  [test conn database]
   (case database
-    :dgraph nil ;; no need for draph
+    :dgraph (let [spec       (get-spec test)
+                  session-id conn]
+              (dgraph/close-session-v2 session-id spec))
     :mongodb nil))
 
 (defn close-relational
@@ -141,7 +144,7 @@
   (let [database (:database test)]
     (if (relation-db? database)
       (close-relational conn)
-      (close-nosql conn database))))
+      (close-nosql test conn database))))
 
 ;; Handle error or other situations
 ;; TODO:这里目前只有 PG 系列的数据库会调用到这个分支，秉持能用就行的原则，暂时不动
@@ -255,10 +258,10 @@
             (assoc ~op :type :fail, :error [:write-conflict (.getMessage e#)])
 
             (throw e#)))
-        
+
         (catch com.mongodb.MongoCommandException e#
           (condp re-find (.getMessage e#)
             #"WriteConflict"
             (assoc ~op :type :fail, :error [:write-conflict (.getMessage e#)])
-            
+
             (throw e#)))))
