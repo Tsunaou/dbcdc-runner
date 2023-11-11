@@ -30,3 +30,5 @@ txn-wal/
 wal-texts/
 # run
 run_*.sh
+
+.DS_Store
