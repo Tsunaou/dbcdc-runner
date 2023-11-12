@@ -63,10 +63,12 @@
   (let [database (:database test)]
     (case database
       (case database
-        :dgraph (dgraph/execute-txn conn txn)
+        :dgraph  (let [session-id conn
+                       spec       (c/get-spec test)]
+                   (dgraph/execute-txn-v2 session-id spec txn))
         :mongodb (let [{:keys [conn session]} conn
-                     spec   (c/get-spec test)]
-                 (mongo/execute-txn conn session txn spec test))))))
+                       spec   (c/get-spec test)]
+                   (mongo/execute-txn conn session txn spec test))))))
 
 (defn retry-func
   [test conn txn isolation]
@@ -164,7 +166,7 @@
    :checker   (wr/checker opts)})
 
 (defn elle-rw-workload
- [opts]
+  [opts]
   (-> (rw-test (assoc (select-keys opts [:key-count
                                          :max-txn-length
                                          :max-writes-per-key])
@@ -176,19 +178,19 @@
   [history]
   (let [_ (info "save-only-ok-invoke")]
     (filterv (fn [op]
-            (or (= :ok (:type op)) (= :invoke (:type op))))
-          history)))
+               (or (= :ok (:type op)) (= :invoke (:type op))))
+             history)))
 
 (defn non-fail-checker
   [opts]
   (reify checker/Checker
     (check [this test history opts]
-           (let [ok-history (save-only-ok-invoke history)
-                 _          (info "checking history" ok-history)]
-             (r/check (assoc opts :directory
-                             (.getCanonicalPath
-                              (store/path! test (:subdirectory opts) "elle")))
-                      ok-history)))))
+      (let [ok-history (save-only-ok-invoke history)
+            _          (info "checking history" ok-history)]
+        (r/check (assoc opts :directory
+                        (.getCanonicalPath
+                         (store/path! test (:subdirectory opts) "elle")))
+                 ok-history)))))
 
 (defn dbcop-rw-workload
   [opts]
