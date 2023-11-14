@@ -9,10 +9,10 @@ app = Flask(__name__)
 
 dgraph_server = "175.27.241.31:9080"
 
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
 # 配置日志输出到文件
-logging.basicConfig(filename='dgraph.log', filemode='w', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename='dgraph.log', filemode='w', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 connection_pool = {}
 
@@ -28,11 +28,11 @@ def release_connection():
         global request
         data = json.loads(request.data)  # 将json字符串转为dict
         session_id = data['session_id']
-        lock.acquire()
+        # lock.acquire()
         global connection_pool
         del connection_pool[session_id]
         logging.info("删除链接 " + str(session_id))
-        lock.release()
+        # lock.release()
         return jsonify({"result": "Success"})
     except:
         logging.error("删除链接失败")
@@ -44,7 +44,7 @@ def release_connection():
 @app.route('/create_session', methods=['POST'])
 def create_session():
     try:
-        lock.acquire()
+        # lock.acquire()
         # 创建一个 Dgraph 连接并获取 Session ID
         client_stub = pydgraph.DgraphClientStub(dgraph_server)
         client = pydgraph.DgraphClient(client_stub)
@@ -60,7 +60,7 @@ def create_session():
         session_id = len(connection_pool) - 1
         logging.info("client成功加入connection pool, session id为" + str(session_id))
 
-        lock.release()
+        # lock.release()
         return jsonify({"result": "Success", "session_id": session_id})
     except:
         logging.error("创建session或添加到链接池失败")
@@ -76,7 +76,7 @@ def commit_transaction():
     ops = data['ops']
     if session_id < 0 or session_id >= len(connection_pool):
         return jsonify({"result": "Failure", "error": "Invalid session ID"})
-    lock.acquire()
+    # lock.acquire()
     client = connection_pool[session_id]
     query = "query { "
     query_count = 0
@@ -104,9 +104,14 @@ def commit_transaction():
     query += "}"
     dgraph_request = txn.create_request(query=query, mutations=mutations, commit_now=True)
 
-    res = txn.do_request(dgraph_request)
+    try:
+        res = txn.do_request(dgraph_request)
+    except:
+        logging.error(f"处理失败：<{session_id}, {ops}")
+        return jsonify({"result": "Failure", "error": "transaction has been aborted"})
+    logging.info(f"<{session_id}, {ops}")
 
-    lock.release()
+    # lock.release()
 
     logging.info("解析事务操作成功")
 
