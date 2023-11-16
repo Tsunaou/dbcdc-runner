@@ -140,7 +140,7 @@ if __name__ == '__main__':
             continue
         output_buf.append(transaction_to_dict(txn))
 
-    save2json(output_buf, './template/history.json', 4)
+    save2json(output_buf, '/Users/seedoilz/Downloads/history.json', 4)
 
     # logger.remove()
     # logger.add(sys.stderr, level="INFO")

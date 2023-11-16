@@ -151,7 +151,7 @@ def commit_transaction():
             #     read_values.append({read_keys[i]: matches[i]})
 
             logging.info("开始时间戳获得成功:" + start_ts)
-            return jsonify({"result": "Success", "start_ts": start_ts, "read_values": result})
+            return jsonify({"result": "Success", "start_ts": start_ts, "values": result})
         except:
             logging.error("只读事务开始时间戳解析失败")
             return jsonify({"result": "Failure", "error": "只读事务开始时间戳解析失败"})
