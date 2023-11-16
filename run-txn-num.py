@@ -20,9 +20,8 @@ command_lein = "lein run test-all -w rw \
 command_drop = "wget --no-check-certificate --quiet \
   --method POST \
   --timeout=0 \
-  --header 'Content-Type: application/json' \
-  --body-data '{\"drop_all\": true}' \
-   'http://175.27.241.31:8080/alter'"
+  --header '' \
+   'http://127.0.0.1:5000/clear'"
 
 
 def get_all_files_in_directory(directory_path):
@@ -105,6 +104,7 @@ if __name__ == '__main__':
 
     os.system(command_drop)
     txn_nums = [5000, 10000, 100000, 500000, 1000000]
+    txn_nums = [50]
     for txn_num in txn_nums:
         generated_path = generate_bincode('txn_num', txn_num)
         convert_to_json(generated_path)

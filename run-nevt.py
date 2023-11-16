@@ -20,9 +20,8 @@ command_lein = "lein run test-all -w rw \
 command_drop = "wget --no-check-certificate --quiet \
   --method POST \
   --timeout=0 \
-  --header 'Content-Type: application/json' \
-  --body-data '{\"drop_all\": true}' \
-   'http://175.27.241.31:8080/alter'"
+  --header '' \
+   'http://127.0.0.1:5000/clear'"
 
 def get_all_files_in_directory(directory_path):
     all_files = []
@@ -110,6 +109,6 @@ if __name__ == '__main__':
         for json_file in get_all_files_in_directory(generated_path):
             if not json_file.endswith(".json"):
                 continue
-            os.system(command_drop)
             os.system(
                 command_lein.replace("${dbcop-workload-path}", json_file))
+            os.system(command_drop)

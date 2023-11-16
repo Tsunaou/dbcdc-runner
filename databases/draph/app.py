@@ -214,6 +214,14 @@ def drop_all():
         return jsonify({"result": "Failure", "error": "数据库清空失败"})
         # raise Exception("数据库清空失败")
 
+@app.route('/clear', methods=['POST'])
+def clear():
+    global pool_index, connection_pool
+    pool_index = 0
+    connection_pool.clear()
+    client_stub = pydgraph.DgraphClientStub(dgraph_server)
+    client = pydgraph.DgraphClient(client_stub)
+    client.alter(pydgraph.Operation(drop_all=True))
 
 def get_ts(response):
     response_text = str(response)
