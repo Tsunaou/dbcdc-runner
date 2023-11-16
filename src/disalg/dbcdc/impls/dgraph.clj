@@ -224,7 +224,7 @@
             reads     (filterv read? txn)
             writes    (filterv write? txn)]
         {:type :ok
-         :values (vec (concat (merge-reads reads values) writes))
+         :value (vec (concat (merge-reads reads values) writes))
          :ts {:rts start-ts :cts commit-ts}})
       (throw (Exception. "失败的理由")))))
 
