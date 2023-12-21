@@ -132,15 +132,15 @@ def phase_edn(hist_edn_path):
 
 if __name__ == '__main__':
     # 测试用
-    history, first_txn_on_each_process, failed_key_value_pairs, op2tid = phase_edn('/Users/seedoilz/Downloads/history.edn')
-    output_buf = []
-    for txn in history:
-        if txn.cts is None or txn.sts is None:
-            logger.warning(f"{txn} is invalid")
-            continue
-        output_buf.append(transaction_to_dict(txn))
-
-    save2json(output_buf, '/Users/seedoilz/Downloads/history.json', 4)
+    # history, first_txn_on_each_process, failed_key_value_pairs, op2tid = phase_edn('/Users/seedoilz/Downloads/history.edn')
+    # output_buf = []
+    # for txn in history:
+    #     if txn.cts is None or txn.sts is None:
+    #         logger.warning(f"{txn} is invalid")
+    #         continue
+    #     output_buf.append(transaction_to_dict(txn))
+    #
+    # save2json(output_buf, '/Users/seedoilz/Downloads/history.json', 4)
 
     # logger.remove()
     # logger.add(sys.stderr, level="INFO")
@@ -152,23 +152,23 @@ if __name__ == '__main__':
     # txn_num = str(sys.argv[1])
 
 
-    # store_example_path = "/Users/seedoilz/Downloads/dbcdc rw dgraph num 120000 con 1 len 12 SI (SI) "
-    #
-    # for instance in os.listdir(store_example_path):
-    #     if instance == 'latest' or instance == '.DS_Store':
-    #         continue
-    #     instance_path = os.path.join(store_example_path, instance)
-    #     history_edn_path = os.path.join(instance_path, 'history.edn')
-    #     history_json_path = os.path.join(instance_path, 'history.json')
-    #
-    #     logger.info(f"Phasing {instance}")
-    #
-    #     history, first_txn_on_each_process, failed_key_value_pairs, op2tid = phase_edn(history_edn_path)
-    #     output_buf = []
-    #     for txn in history:
-    #         if txn.cts is None or txn.sts is None:
-    #             logger.warning(f"{txn} is invalid")
-    #             continue
-    #         output_buf.append(transaction_to_dict(txn))
-    #
-    #     save2json(output_buf, history_json_path, 4)
+    store_example_path = "/Users/seedoilz/Downloads/dbcdc rw dgraph num 120000 con 1 len 12 SI (SI) "
+
+    for instance in os.listdir(store_example_path):
+        if instance == 'latest' or instance == '.DS_Store':
+            continue
+        instance_path = os.path.join(store_example_path, instance)
+        history_edn_path = os.path.join(instance_path, 'history.edn')
+        history_json_path = os.path.join(instance_path, 'history.json')
+
+        logger.info(f"Phasing {instance}")
+
+        history, first_txn_on_each_process, failed_key_value_pairs, op2tid = phase_edn(history_edn_path)
+        output_buf = []
+        for txn in history:
+            if txn.cts is None or txn.sts is None:
+                logger.warning(f"{txn} is invalid")
+                continue
+            output_buf.append(transaction_to_dict(txn))
+
+        save2json(output_buf, history_json_path, 4)

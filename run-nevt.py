@@ -101,7 +101,7 @@ def convert_to_json(path):
 if __name__ == '__main__':
 
     mode = 'nevt'
-    variables = [5]
+    variables = [5, 15, 30, 50, 100]
     os.system(command_drop)
     for variable in variables:
         generated_path = generate_bincode(mode, variable)
