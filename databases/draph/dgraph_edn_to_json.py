@@ -21,20 +21,24 @@ kIndex = Keyword('index')
 kRts = Keyword('rts')
 kCts = Keyword('cts')
 
+
 def read_json(file_path):
     with open(file_path, "r") as f:
         data = json.load(f)
         return data
+
 
 def load_history(history_edn):
     with open(history_edn, 'r') as f:
         his_edn_data = f.readlines()
     return his_edn_data
 
+
 def log_progress(processed_count, progress_step, total_count):
     if processed_count % progress_step == 0:
         progress = processed_count / total_count * 100
         logger.info(f"Processed {progress:.0f}% of history.edn")
+
 
 def phase_edn(hist_edn_path):
     logger.info(f"Start phasing {hist_edn_path}")
@@ -52,27 +56,30 @@ def phase_edn(hist_edn_path):
     hist_data_len = len(hist_data)
     progress_step = hist_data_len // 10  # 每 10% 打印一次进度日志
 
+    count_invoke = 0
+
     for i, line in enumerate(hist_data):
         raw_txn = edn_format.loads(line)  # type: ImmutableDict
         raw_type = raw_txn.get(kType)
 
         # 首先排除所有类型是 :invoke 的项
         if raw_type == kInvoke:
+            count_invoke += 1
             log_progress(i, progress_step, hist_data_len)
             continue
 
         raw_value = raw_txn.get(kValue)  # type: ImmutableList
 
         # 记录下中止事务的所有写操作
-        if raw_type != kOK:
-            # for raw_op in raw_value:  # type: ImmutableList
-            #     if raw_op[0] == kWrite:
-            #         op = Operation(t='w', k=raw_op[1], v=raw_op[2])
-            #         if op in failed_key_value_pairs:
-            #             logger.warning(f"{op} is added before")
-            #         failed_key_value_pairs.add(op)
-            # log_progress(i, progress_step, hist_data_len)
-            continue
+        # if raw_type != kOK:
+        # for raw_op in raw_value:  # type: ImmutableList
+        #     if raw_op[0] == kWrite:
+        #         op = Operation(t='w', k=raw_op[1], v=raw_op[2])
+        #         if op in failed_key_value_pairs:
+        #             logger.warning(f"{op} is added before")
+        #         failed_key_value_pairs.add(op)
+        # log_progress(i, progress_step, hist_data_len)
+        # continue
 
         session = raw_txn.get(kProcess)
         read_only_flag = True
@@ -83,7 +90,6 @@ def phase_edn(hist_edn_path):
         write_list = []
 
         rawTimestamp = raw_txn.get(kTs)
-
 
         txn = txn._replace(sts=HLC(l=0, p=rawTimestamp.get(kRts)), cts=HLC(l=0, p=rawTimestamp.get(kCts)))
 
@@ -104,17 +110,18 @@ def phase_edn(hist_edn_path):
             else:
                 logger.warning(f"Invalid op type of {raw_op_type}")
 
+        if read_only_flag:
+            txn = txn._replace(cts=HLC(l=0, p=rawTimestamp.get(kRts)))
+
         # 先放读
         for read in read_list:
             txn.ops.append(read)
         for write in write_list:
             txn.ops.append(write)
 
-
-
-        if read_only_flag:
-            log_progress(i, progress_step, hist_data_len)
-            continue
+        # if read_only_flag:
+        #     log_progress(i, progress_step, hist_data_len)
+        #     continue
 
         history.append(txn)
         idx = idx + 1
@@ -126,13 +133,12 @@ def phase_edn(hist_edn_path):
 
         log_progress(i, progress_step, hist_data_len)
         continue
-
     return history, first_txn_on_each_process, failed_key_value_pairs, op2tid
 
 
 if __name__ == '__main__':
     # 测试用
-    # history, first_txn_on_each_process, failed_key_value_pairs, op2tid = phase_edn('/Users/seedoilz/Downloads/history.edn')
+    # history, first_txn_on_each_process, failed_key_value_pairs, op2tid = phase_edn('/Users/seedoilz/Downloads/pydgraph-readp-0.9-10w/20240107T154940.000+0800/history.edn')
     # output_buf = []
     # for txn in history:
     #     if txn.cts is None or txn.sts is None:
@@ -140,19 +146,18 @@ if __name__ == '__main__':
     #         continue
     #     output_buf.append(transaction_to_dict(txn))
     #
-    # save2json(output_buf, '/Users/seedoilz/Downloads/history.json', 4)
+    # save2json(output_buf, '/Users/seedoilz/Downloads/pydgraph-readp-0.9-10w/20240107T154940.000+0800/history.json', 4)
 
     # logger.remove()
     # logger.add(sys.stderr, level="INFO")
-    
+
     # if len(sys.argv) < 2:
     #     print("Usage: python dgraph_edn_to_json.py 10000(your txn number)")
     #     sys.exit(1)
     #
     # txn_num = str(sys.argv[1])
 
-
-    store_example_path = "/Users/seedoilz/Downloads/dbcdc rw dgraph num 120000 con 1 len 12 SI (SI) "
+    store_example_path = "/Users/seedoilz/Downloads/pydgraph-readp-0.9-10w"
 
     for instance in os.listdir(store_example_path):
         if instance == 'latest' or instance == '.DS_Store':
