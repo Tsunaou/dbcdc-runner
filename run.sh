@@ -4,11 +4,11 @@ lein run test-all -w rw \
 --concurrency 50 \
 -r 500 \
 --node dummy-node \
---isolation snapshot-isolation \
---expected-consistency-model snapshot-isolation \
---time-limit 10 \
+--isolation serializable \
+--expected-consistency-model serializable \
+--time-limit 10000 \
 --nemesis none \
 --existing-postgres \
 --no-ssh \
---database $1 \
+--database postgresql \
 # --varchar-table

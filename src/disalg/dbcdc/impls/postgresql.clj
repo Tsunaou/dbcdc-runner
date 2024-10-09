@@ -73,9 +73,9 @@
 ;                            [(str "select val from " table " where key = ?") key]
                             [(str "SELECT val FROM " table " WHERE key = " key)]
                             {:builder-fn rs/as-unqualified-lower-maps})]
-    (info "op: read (" key "), res: " res ", state :"
-          (j/execute! conn ["SELECT current_setting('transaction_isolation')"])
-          "in-txn? " (check-in-txn conn))
+    ;; (info "op: read (" key "), res: " res ", state :"
+    ;;       (j/execute! conn ["SELECT current_setting('transaction_isolation')"])
+    ;;       "in-txn? " (check-in-txn conn))
     (when-let [v (:val res)]
       (if (string? v)
         (long (Long/parseLong v))
@@ -105,9 +105,9 @@
                    " (key, val) VALUES (" key ", " value ")"
                    " ON CONFLICT (key) DO UPDATE SET"
                    " val = " value " WHERE t.key = " key)])]
-    (info "op: write (" key value "), res: " res ", state :"
-          (j/execute! conn ["SELECT current_setting('transaction_isolation')"])
-          "in-txn? " (check-in-txn conn))
+    ;; (info "op: write (" key value "), res: " res ", state :"
+    ;;       (j/execute! conn ["SELECT current_setting('transaction_isolation')"])
+    ;;       "in-txn? " (check-in-txn conn))
 
     (when-not (pos? (res :next.jdbc/update-count))
       (throw+ {:type ::write-but-not-take-effect
