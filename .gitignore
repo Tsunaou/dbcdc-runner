@@ -17,7 +17,6 @@ store*
 .idea
 *.iml
 .vscode
-/resources/db-config.edn
 .calva
 
 # TiDB

@@ -1,0 +1,29 @@
+{:postgresql {:dbtype    "postgresql"
+              :host      "localhost"
+              :port      5432
+              :user      "postgres"
+              :password  "postgres"
+              :dbname    "test"
+              :sslmode   "disable"}
+
+ :tidb       {:dbtype    "mysql"
+              :host      "host"
+              :port      port
+              :dbname    "dbname"}
+ 
+  :mysql     {:dbtype    "mysql"
+              :host      "host"
+              :port      port
+              :dbname    "dbname"
+              :user      "user"
+              :password  "password"}
+
+ :dgraph     {:dbyte     "dgraph"
+              :host      "host"
+              :port      port}
+
+ :mongodb    {:dbyte     "mongodb"
+              :host      "host"
+              :port      port
+              :dbname    "dbname"
+              :collname  "collname"}}
